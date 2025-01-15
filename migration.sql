@@ -1,0 +1,5 @@
+-- Add new columns to users table
+ALTER TABLE users ADD COLUMN email TEXT;
+ALTER TABLE users ADD COLUMN avatar TEXT;
+ALTER TABLE users ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE users ADD COLUMN updated_at TIMESTAMP;

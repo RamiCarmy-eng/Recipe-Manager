@@ -1,0 +1,18 @@
+import sqlite3
+
+def verify_tables():
+    db = sqlite3.connect('instance/recipes.db')
+    cursor = db.cursor()
+    
+    # Get all tables
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = cursor.fetchall()
+    
+    print("Tables in database:")
+    for table in tables:
+        print(f"- {table[0]}")
+    
+    db.close()
+
+if __name__ == '__main__':
+    verify_tables()

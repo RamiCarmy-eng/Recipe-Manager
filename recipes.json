@@ -1,0 +1,1120 @@
+[
+  {
+    "name": "Pancakes",
+    "ingredients": [
+      {
+        "ingredient": "Eggs",
+        "quantity": 2,
+        "unit": "units",
+        "description": "Beat the eggs.",
+        "category": "Protein"
+      },
+      {
+        "ingredient": "Milk",
+        "quantity": 1,
+        "unit": "cup",
+        "description": "Add to the eggs.",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Flour",
+        "quantity": 1,
+        "unit": "cup",
+        "description": "Mix with the eggs and milk.",
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Sugar",
+        "quantity": 2,
+        "unit": "tablespoons",
+        "description": "Add for sweetness.",
+        "category": "Condiments"
+      }
+    ],
+    "image_path": "images/pancakes.png"
+  },
+  {
+    "name": "Chocolate Cake",
+    "ingredients": [
+      {
+        "ingredient": "Eggs",
+        "quantity": 3,
+        "unit": "units",
+        "description": "Beat the eggs.",
+        "category": "Protein"
+      },
+      {
+        "ingredient": "Sugar",
+        "quantity": 1,
+        "unit": "cup",
+        "description": "Add to the eggs.",
+        "category": "Condiments"
+      },
+      {
+        "ingredient": "Dark Chocolate",
+        "quantity": 200,
+        "unit": "grams",
+        "description": "Melt the chocolate.",
+        "category": "Sweets"
+      },
+      {
+        "ingredient": "Butter",
+        "quantity": 100,
+        "unit": "grams",
+        "description": "Melt with chocolate.",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Flour",
+        "quantity": 1.5,
+        "unit": "cups",
+        "description": "Add to the mix.",
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Baking Powder",
+        "quantity": 1,
+        "unit": "teaspoon",
+        "description": "Add to help the cake rise.",
+        "category": "Baking Essentials"
+      }
+    ],
+    "image_path": "images/chokolate_cake.png"
+  },
+  {
+    "name": "Vegetable Soup",
+    "ingredients": [
+      {
+        "ingredient": "Carrots",
+        "quantity": 3,
+        "unit": "units",
+        "description": "Peel and chop.",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Potatoes",
+        "quantity": 2,
+        "unit": "units",
+        "description": "Peel and chop.",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Onion",
+        "quantity": 1,
+        "unit": "unit",
+        "description": "Chop finely.",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Celery",
+        "quantity": 2,
+        "unit": "stalks",
+        "description": "Chop finely.",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Garlic",
+        "quantity": 3,
+        "unit": "cloves",
+        "description": "Chop finely.",
+        "category": "Condiments"
+      },
+      {
+        "ingredient": "Vegetable Broth",
+        "quantity": 4,
+        "unit": "cups",
+        "description": "Add to the pot.",
+        "category": "Liquids"
+      }
+    ],
+    "image_path": "images/vegetable_soup.png"
+  },
+  {
+    "name": "Spaghetti Carbonara",
+    "ingredients": [
+      {
+        "ingredient": "Spaghetti",
+        "quantity": 200,
+        "unit": "grams",
+        "description": "Boil in salted water.",
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Eggs",
+        "quantity": 2,
+        "unit": "units",
+        "description": "Beat together with cheese.",
+        "category": "Protein"
+      },
+      {
+        "ingredient": "Pancetta",
+        "quantity": 100,
+        "unit": "grams",
+        "description": "Fry until crispy.",
+        "category": "Meat"
+      },
+      {
+        "ingredient": "Parmesan Cheese",
+        "quantity": 0.5,
+        "unit": "cup",
+        "description": "Grate and mix with eggs.",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Olive Oil",
+        "quantity": 1,
+        "unit": "tablespoon",
+        "description": "Use to fry the pancetta.",
+        "category": "Oil"
+      }
+    ],
+    "image_path": "images/spaghetti_carbonara.png"
+  },
+  {
+    "name": "Chicken Salad",
+    "ingredients": [
+      {
+        "ingredient": "Chicken Breast",
+        "quantity": 2,
+        "unit": "pieces",
+        "description": "Cook and slice.",
+        "category": "Meat"
+      },
+      {
+        "ingredient": "Lettuce",
+        "quantity": 1,
+        "unit": "head",
+        "description": "Wash and chop.",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Tomatoes",
+        "quantity": 2,
+        "unit": "units",
+        "description": "Chop into cubes.",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Cucumber",
+        "quantity": 1,
+        "unit": "unit",
+        "description": "Slice.",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Olive Oil",
+        "quantity": 2,
+        "unit": "tablespoons",
+        "description": "Drizzle over the salad.",
+        "category": "Oil"
+      },
+      {
+        "ingredient": "Lemon Juice",
+        "quantity": 1,
+        "unit": "tablespoon",
+        "description": "Add for dressing.",
+        "category": "Condiments"
+      }
+    ],
+    "image_path": "images/chicken_salad.png"
+  },
+  {
+    "name": "Classic Pancakes",
+    "ingredients": [
+      {
+        "ingredient": "All-purpose flour",
+        "quantity": 1.5,
+        "unit": "cups",
+        "description": "Sifted",
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Baking powder",
+        "quantity": 1,
+        "unit": "tablespoon",
+        "description": "Leavening agent",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Sugar",
+        "quantity": 1,
+        "unit": "tablespoon",
+        "description": "Sweetener",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Salt",
+        "quantity": 0.5,
+        "unit": "teaspoon",
+        "description": "Flavor enhancer",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Milk",
+        "quantity": 1.25,
+        "unit": "cups",
+        "description": "Whole",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Egg",
+        "quantity": 1,
+        "unit": "unit",
+        "description": "Large",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Butter",
+        "quantity": 3,
+        "unit": "tablespoons",
+        "description": "Melted",
+        "category": "Dairy"
+      }
+    ],
+    "image_path": ""
+  },
+  {
+    "name": "Shakshuka",
+    "ingredients": [
+      {
+        "ingredient": "Tomatoes",
+        "quantity": 4,
+        "unit": "whole",
+        "description": "Fresh, diced",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Eggs",
+        "quantity": 3,
+        "unit": "whole",
+        "description": "Fresh",
+        "category": "Protein"
+      },
+      {
+        "ingredient": "Onion",
+        "quantity": 1,
+        "unit": "whole",
+        "description": "Diced",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Garlic",
+        "quantity": 2,
+        "unit": "cloves",
+        "description": "Minced",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Parsley",
+        "quantity": 0.25,
+        "unit": "cup",
+        "description": "Fresh, chopped",
+        "category": "Herbs"
+      },
+      {
+        "ingredient": "Salt",
+        "quantity": 1,
+        "unit": "teaspoon",
+        "description": "To taste",
+        "category": "Seasoning"
+      },
+      {
+        "ingredient": "Black pepper",
+        "quantity": 0.5,
+        "unit": "teaspoon",
+        "description": "To taste",
+        "category": "Seasoning"
+      }
+    ],
+    "image_path": "[image showing a pan with eggs poached in tomato sauce topped with herbs]"
+  },
+  {
+    "name": "Chocolate Chip Cookies",
+    "ingredients": [
+      {
+        "ingredient": "All-purpose flour",
+        "quantity": 2.25,
+        "unit": "cups",
+        "description": "Sifted",
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Baking soda",
+        "quantity": 1,
+        "unit": "teaspoon",
+        "description": "Leavening agent",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Salt",
+        "quantity": 0.5,
+        "unit": "teaspoon",
+        "description": "Flavor enhancer",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Butter",
+        "quantity": 1,
+        "unit": "cup",
+        "description": "Unsalted, softened",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Sugar",
+        "quantity": 0.75,
+        "unit": "cup",
+        "description": "Granulated",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Brown sugar",
+        "quantity": 0.75,
+        "unit": "cup",
+        "description": "Packed",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Eggs",
+        "quantity": 2,
+        "unit": "units",
+        "description": "Large",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Vanilla extract",
+        "quantity": 1,
+        "unit": "teaspoon",
+        "description": "Pure",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Chocolate chips",
+        "quantity": 2,
+        "unit": "cups",
+        "description": "Semi-sweet",
+        "category": "Others"
+      }
+    ],
+    "image_path": ""
+  },
+  {
+    "name": "Classic Caesar Salad",
+    "ingredients": [
+      {
+        "ingredient": "Romaine lettuce",
+        "quantity": 1,
+        "unit": "head",
+        "description": "Chopped",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Parmesan cheese",
+        "quantity": 0.5,
+        "unit": "cup",
+        "description": "Grated",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Croutons",
+        "quantity": 1,
+        "unit": "cup",
+        "description": "Seasoned",
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Caesar dressing",
+        "quantity": 0.5,
+        "unit": "cup",
+        "description": "Store-bought or homemade",
+        "category": "Others"
+      }
+    ],
+    "image_path": ""
+  },
+  {
+    "name": "Apple Pie",
+    "ingredients": [
+      {
+        "ingredient": "Pie crust",
+        "quantity": 2,
+        "unit": "units",
+        "description": "Store-bought or homemade",
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Apples",
+        "quantity": 6,
+        "unit": "units",
+        "description": "Peeled, cored, and sliced",
+        "category": "Fruits"
+      },
+      {
+        "ingredient": "Sugar",
+        "quantity": 0.75,
+        "unit": "cup",
+        "description": "Granulated",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Brown sugar",
+        "quantity": 0.25,
+        "unit": "cup",
+        "description": "Packed",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Cinnamon",
+        "quantity": 1,
+        "unit": "teaspoon",
+        "description": "Ground",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Butter",
+        "quantity": 2,
+        "unit": "tablespoons",
+        "description": "Unsalted, diced",
+        "category": "Dairy"
+      }
+    ],
+    "image_path": ""
+  },
+  {
+    "name": "Asian-Style Pickled Cabbage",
+    "ingredients": [
+      {
+        "ingredient": "Cabbage",
+        "quantity": 1,
+        "unit": "head",
+        "description": "Fresh, chopped",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Salt",
+        "quantity": 2,
+        "unit": "tablespoons",
+        "description": "For pickling",
+        "category": "Seasoning"
+      },
+      {
+        "ingredient": "Garlic",
+        "quantity": 5,
+        "unit": "cloves",
+        "description": "Minced",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Ginger",
+        "quantity": 1,
+        "unit": "tablespoon",
+        "description": "Fresh, grated",
+        "category": "Spices"
+      },
+      {
+        "ingredient": "Sugar",
+        "quantity": 1,
+        "unit": "teaspoon",
+        "description": "For taste",
+        "category": "Sweeteners"
+      },
+      {
+        "ingredient": "Rice vinegar",
+        "quantity": 0.5,
+        "unit": "cup",
+        "description": "For pickling",
+        "category": "Acids"
+      }
+    ],
+    "image_path": "[image of pickled cabbage in glass jar]"
+  },
+  {
+    "name": "Macaroni and Cheese",
+    "ingredients": [
+      {
+        "ingredient": "Elbow macaroni",
+        "quantity": 2,
+        "unit": "cups",
+        "description": "Uncooked",
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Butter",
+        "quantity": 2,
+        "unit": "tablespoons",
+        "description": "Unsalted",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Flour",
+        "quantity": 2,
+        "unit": "tablespoons",
+        "description": "All-purpose",
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Milk",
+        "quantity": 2,
+        "unit": "cups",
+        "description": "Whole",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Cheddar cheese",
+        "quantity": 2,
+        "unit": "cups",
+        "description": "Shredded",
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Salt",
+        "quantity": 0.5,
+        "unit": "teaspoon",
+        "description": "Flavor enhancer",
+        "category": "Others"
+      },
+      {
+        "ingredient": "Black pepper",
+        "quantity": 0.25,
+        "unit": "teaspoon",
+        "description": "Ground",
+        "category": "Others"
+      }
+    ],
+    "image_path": ""
+  },
+  {
+    "name": "Chudu",
+    "ingredients": [
+      {
+        "ingredient": "Dough",
+        "quantity": null,
+        "unit": null,
+        "description": "For making the chudu shells",
+        "category": "Baking"
+      },
+      {
+        "ingredient": "Potato pieces",
+        "quantity": null,
+        "unit": null,
+        "description": "Cooked and lightly mashed",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Onion",
+        "quantity": 1,
+        "unit": "whole",
+        "description": "Finely chopped",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Green chilies",
+        "quantity": 2,
+        "unit": null,
+        "description": "Finely chopped",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Coriander leaves",
+        "quantity": 0.5,
+        "unit": "cup",
+        "description": "Chopped",
+        "category": "Herbs"
+      },
+      {
+        "ingredient": "Salt",
+        "quantity": "to taste",
+        "unit": null,
+        "description": null,
+        "category": "Seasoning"
+      }
+    ],
+    "instructions": [
+      "Make small balls from the dough and flatten them into thin discs.",
+      "Place a spoonful of the potato, onion, green chilies and coriander leaves mixture in the center of each disc.",
+      "Fold the disc in half to form a semi-circular shape and seal the edges by pressing them together.",
+      "Heat oil in a pan and fry the chudu until golden brown on both sides.",
+      "Serve hot."
+    ],
+    "image_path": "[image showing two photos of the chudu, one uncooked and the other fried]"
+  },
+  {
+    "name": "Mud Upma",
+    "ingredients": [
+      {
+        "ingredient": "Semolina (Rava)",
+        "quantity": 1,
+        "unit": "cup",
+        "description": null,
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Water",
+        "quantity": 2,
+        "unit": "cups",
+        "description": null,
+        "category": "Liquids"
+      },
+      {
+        "ingredient": "Cashews",
+        "quantity": 10,
+        "unit": "whole",
+        "description": "Halved",
+        "category": "Nuts"
+      },
+      {
+        "ingredient": "Curry leaves",
+        "quantity": 10,
+        "unit": "leaves",
+        "description": null,
+        "category": "Herbs"
+      },
+      {
+        "ingredient": "Mustard seeds",
+        "quantity": 1,
+        "unit": "teaspoon",
+        "description": null,
+        "category": "Spices"
+      },
+      {
+        "ingredient": "Urad dal",
+        "quantity": 1,
+        "unit": "teaspoon",
+        "description": null,
+        "category": "Lentils"
+      },
+      {
+        "ingredient": "Chili powder",
+        "quantity": 0.5,
+        "unit": "teaspoon",
+        "description": null,
+        "category": "Spices"
+      },
+      {
+        "ingredient": "Salt",
+        "quantity": "to taste",
+        "unit": null,
+        "description": null,
+        "category": "Seasoning"
+      }
+    ],
+    "instructions": [
+      "Roast the semolina (rava) in a pan until fragrant and lightly browned.",
+      "Bring the water to a boil in a saucepan.",
+      "Add the roasted semolina to the boiling water and stir constantly to prevent lumps.",
+      "Reduce the heat to low, cover, and cook for about 10 minutes, stirring occasionally, until the semolina is cooked through.",
+      "In a separate pan, heat oil and add the mustard seeds. Once they start to splutter, add the urad dal and curry leaves.",
+      "Salt\u00c3\u00a9 until the dal turns golden brown.",
+      "Add the cashews and salt\u00c3\u00a9 for a minute.",
+      "Add the chili powder and salt to taste.",
+      "Combine the semolina mixture and the tempering mixture, and mix well.",
+      "Serve hot."
+    ],
+    "image_path": "[image showing two photos of the cooked upma dish]"
+  },
+  {
+    "name": "Osra",
+    "ingredients": [
+      {
+        "ingredient": "Rice flour",
+        "quantity": 1,
+        "unit": "cup",
+        "description": null,
+        "category": "Grains"
+      },
+      {
+        "ingredient": "Water",
+        "quantity": 2,
+        "unit": "cups",
+        "description": null,
+        "category": "Liquids"
+      },
+      {
+        "ingredient": "Coconut, freshly grated",
+        "quantity": 1,
+        "unit": "cup",
+        "description": null,
+        "category": "Nuts/Seeds"
+      },
+      {
+        "ingredient": "Jaggery",
+        "quantity": 0.5,
+        "unit": "cup",
+        "description": "Grated",
+        "category": "Sweeteners"
+      },
+      {
+        "ingredient": "Green chilies",
+        "quantity": 2,
+        "unit": "whole",
+        "description": "Finely chopped",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Curry leaves",
+        "quantity": 10,
+        "unit": "leaves",
+        "description": null,
+        "category": "Herbs"
+      },
+      {
+        "ingredient": "Salt",
+        "quantity": "to taste",
+        "unit": null,
+        "description": null,
+        "category": "Seasoning"
+      }
+    ],
+    "instructions": [
+      "Mix the rice flour and water to make a smooth batter.",
+      "Add the grated coconut, jaggery, green chilies, and curry leaves to the batter.",
+      "Mix well and add salt to taste.",
+      "Pour the batter into a greased steamer and steam for about 15-20 minutes, or until a toothpick inserted comes out clean.",
+      "Serve hot."
+    ],
+    "image_path": "[image showing the steamed osra dish]"
+  },
+  {
+    "name": "Dum Aloo",
+    "ingredients": [
+      {
+        "ingredient": "Potatoes",
+        "quantity": 10,
+        "unit": "medium-sized",
+        "description": "Par-boiled and halved",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Yogurt",
+        "quantity": 1,
+        "unit": "cup",
+        "description": null,
+        "category": "Dairy"
+      },
+      {
+        "ingredient": "Onion",
+        "quantity": 1,
+        "unit": "medium",
+        "description": "Finely chopped",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Ginger-garlic paste",
+        "quantity": 2,
+        "unit": "tablespoons",
+        "description": null,
+        "category": "Aromatics"
+      },
+      {
+        "ingredient": "Coriander powder",
+        "quantity": 2,
+        "unit": "teaspoons",
+        "description": null,
+        "category": "Spices"
+      },
+      {
+        "ingredient": "Cumin powder",
+        "quantity": 1,
+        "unit": "teaspoon",
+        "description": null,
+        "category": "Spices"
+      },
+      {
+        "ingredient": "Red chili powder",
+        "quantity": 1,
+        "unit": "teaspoon",
+        "description": null,
+        "category": "Spices"
+      },
+      {
+        "ingredient": "Salt",
+        "quantity": "to taste",
+        "unit": null,
+        "description": null,
+        "category": "Seasoning"
+      },
+      {
+        "ingredient": "Vegetable oil",
+        "quantity": 3,
+        "unit": "tablespoons",
+        "description": null,
+        "category": "Fats and Oils"
+      },
+      {
+        "ingredient": "Water",
+        "quantity": 1,
+        "unit": "cup",
+        "description": null,
+        "category": "Liquids"
+      }
+    ],
+    "instructions": [
+      "Par-boil the potatoes until slightly tender, then halve them.",
+      "In a bowl, mix the yogurt, onion, ginger-garlic paste, coriander powder, cumin powder, and red chili powder. Add salt to taste.",
+      "Heat oil in a pan and fry the par-boiled potato halves until golden brown.",
+      "Add the yogurt-spice mixture to the pan and mix well. Pour in the water and bring to a simmer.",
+      "Cover and cook for 15-20 minutes, or until the potatoes are tender and the gravy has thickened.",
+      "Serve hot, garnished with fresh coriander leaves if desired."
+    ],
+    "image_path": "[images showing the various stages of the Dum Aloo dish preparation]"
+  },
+  {
+    "name": "Uni Aloo",
+    "ingredients": [
+      {
+        "ingredient": "Potatoes",
+        "quantity": null,
+        "unit": null,
+        "description": "Boiled and halved",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Chickpeas (Chhola)",
+        "quantity": null,
+        "unit": null,
+        "description": "Cooked",
+        "category": "Legumes"
+      },
+      {
+        "ingredient": "Onion",
+        "quantity": null,
+        "unit": null,
+        "description": "Finely chopped",
+        "category": "Vegetables"
+      },
+      {
+        "ingredient": "Ginger-garlic paste",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Aromatics"
+      },
+      {
+        "ingredient": "Coriander powder",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Spices"
+      },
+      {
+        "ingredient": "Cumin powder",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Spices"
+      },
+      {
+        "ingredient": "Red chili powder",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Spices"
+      },
+      {
+        "ingredient": "Salt",
+        "quantity": "to taste",
+        "unit": null,
+        "description": null,
+        "category": "Seasoning"
+      },
+      {
+        "ingredient": "Vegetable oil",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Fats and Oils"
+      },
+      {
+        "ingredient": "Water",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Liquids"
+      }
+    ],
+    "instructions": [
+      "Boil the potatoes until tender, then halve them.",
+      "In a pan, heat oil and fry the potato halves until golden brown.",
+      "Add the chopped onion, ginger-garlic paste, and spices (coriander powder, cumin powder, red chili powder).",
+      "Saut\u00c3\u00a9 the mixture until the onions are translucent.",
+      "Add the cooked chickpeas and mix well.",
+      "Pour in some water and let the dish simmer until the flavors meld together.",
+      "Season with salt to taste.",
+      "Serve hot, garnished with fresh coriander leaves if desired."
+    ],
+    "image_path": "[images showing the various stages of the Uni Aloo dish preparation]"
+  },
+  {
+    "name": "Sgor Nial Iold Iaen",
+    "ingredients": [
+      {
+        "ingredient": "Fresh fish",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Protein"
+      },
+      {
+        "ingredient": "Herbs and vegetables",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Produce"
+      }
+    ],
+    "instructions": [
+      "Prepare the fresh fish with the herbs and vegetables.",
+      "Arrange the dish on a plate in a decorative manner."
+    ],
+    "image_path": "[image showing a plate of prepared fish dish with herbs and vegetables]"
+  },
+  {
+    "name": "Bwd Ngad",
+    "ingredients": [
+      {
+        "ingredient": "Whole fish",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Protein"
+      },
+      {
+        "ingredient": "Lemon slices",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Produce"
+      },
+      {
+        "ingredient": "Other vegetables",
+        "quantity": null,
+        "unit": null,
+        "description": null,
+        "category": "Produce"
+      }
+    ],
+    "instructions": [
+      "Arrange the whole fish with lemon slices and other vegetables in a baking dish.",
+      "Bake or roast the dish until the fish is cooked through."
+    ],
+    "image_path": "[image showing a baking dish with whole fish, lemon slices, and other vegetables]"
+  },
+  {
+    "name": "Hwd Y Clli Lyfr",
+    "ingredients": [
+      {
+        "ingredient": "Fresh fish",
+        "quantity": 0,
+        "unit": null,
+        "description": null,
+        "category": "Protein"
+      },
+      {
+        "ingredient": "Potatoes",
+        "quantity": 0,
+        "unit": null,
+        "description": null,
+        "category": "Produce"
+      },
+      {
+        "ingredient": "Other vegetables",
+        "quantity": 0,
+        "unit": null,
+        "description": null,
+        "category": "Produce"
+      }
+    ],
+    "instructions": [
+      "Prepare the fresh fish with the potatoes and other vegetables.",
+      "Cook the dish until all the ingredients are tender and the flavors have blended together."
+    ],
+    "image_path": "[image showing a dish with cooked fish, potatoes, and other vegetables]"
+  },
+  {
+    "name": "Couscous with Vegetables",
+    "ingredients": [
+      {
+        "name": "Couscous",
+        "quantity": "1",
+        "unit": "cup",
+        "category": "Main Ingredient",
+        "description": "Fine-grained semolina wheat"
+      },
+      {
+        "name": "Vegetable Broth",
+        "quantity": "2",
+        "unit": "cups",
+        "category": "Liquid",
+        "description": "Broth made from vegetables"
+      },
+      {
+        "name": "Olive Oil",
+        "quantity": "2",
+        "unit": "tablespoons",
+        "category": "Oil",
+        "description": "Extra virgin olive oil"
+      },
+      {
+        "name": "Onion",
+        "quantity": "1",
+        "unit": "medium",
+        "category": "Vegetable",
+        "description": "Chopped"
+      },
+      {
+        "name": "Garlic",
+        "quantity": "2",
+        "unit": "cloves",
+        "category": "Vegetable",
+        "description": "Minced"
+      },
+      {
+        "name": "Zucchini",
+        "quantity": "1",
+        "unit": "medium",
+        "category": "Vegetable",
+        "description": "Diced"
+      },
+      {
+        "name": "Carrots",
+        "quantity": "2",
+        "unit": "medium",
+        "category": "Vegetable",
+        "description": "Diced"
+      },
+      {
+        "name": "Bell Peppers",
+        "quantity": "1",
+        "unit": "medium",
+        "category": "Vegetable",
+        "description": "Diced"
+      },
+      {
+        "name": "Salt",
+        "quantity": "To taste",
+        "unit": "",
+        "category": "Seasoning",
+        "description": "Salt"
+      },
+      {
+        "name": "Pepper",
+        "quantity": "To taste",
+        "unit": "",
+        "category": "Seasoning",
+        "description": "Black pepper"
+      }
+    ],
+    "instructions": [
+      "Heat the olive oil in a large pot over medium heat. Add the onion and garlic and cook until softened, about 5 minutes.",
+      "Add the zucchini, carrots, and bell peppers to the pot and cook until slightly tender, about 5 minutes more.",
+      "Add the couscous and vegetable broth to the pot and bring to a boil. Reduce heat to low, cover, and simmer for 10 minutes.",
+      "Remove the pot from the heat and let it sit for 5 minutes. Fluff the couscous with a fork and season with salt and pepper to taste."
+    ],
+    "notes": [
+      "You can use any combination of vegetables you like.",
+      "If the couscous is too dry, add a little more vegetable broth.",
+      "You can serve the couscous with additional vegetables, meat, or yogurt."
+    ],
+    "image_path": "image.png"
+  }
+]
+

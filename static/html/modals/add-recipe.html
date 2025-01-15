@@ -1,0 +1,37 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h2>Add New Recipe</h2>
+        <button class="close-modal">&times;</button>
+    </div>
+    <form id="add-recipe-form">
+        <div class="form-group">
+            <label for="recipe-name">Recipe Name</label>
+            <input type="text" id="recipe-name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="recipe-category">Category</label>
+            <input type="text" id="recipe-category" name="category" required>
+        </div>
+        <div class="form-group">
+            <label for="recipe-description">Description</label>
+            <textarea id="recipe-description" name="description" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="recipe-instructions">Instructions</label>
+            <textarea id="recipe-instructions" name="instructions" required></textarea>
+        </div>
+        <div class="ingredients-section">
+            <h3>Ingredients</h3>
+            <div id="ingredients-list"></div>
+            <button type="button" id="add-ingredient">Add Ingredient</button>
+        </div>
+        <div class="form-group">
+            <label for="recipe-image">Image</label>
+            <input type="file" id="recipe-image" name="image" accept="image/*">
+        </div>
+        <div class="modal-footer">
+            <button type="submit">Save Recipe</button>
+            <button type="button" class="cancel-button">Cancel</button>
+        </div>
+    </form>
+</div> 

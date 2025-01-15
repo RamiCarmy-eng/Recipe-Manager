@@ -1,0 +1,108 @@
+/* Responsive Design Breakpoints */
+
+/* Small devices (phones, less than 576px) */
+@media (max-width: 575.98px) {
+    .container {
+        padding: 10px;
+    }
+
+    /* Login Form */
+    .login-container {
+        width: 100%;
+        margin: 20px 0;
+    }
+
+    /* Recipe Cards */
+    .recipe-card {
+        margin-bottom: 15px;
+    }
+
+    .card-img-top {
+        height: 150px;
+    }
+
+    /* Modals */
+    .modal-dialog {
+        margin: 10px;
+    }
+
+    /* Navigation */
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+
+    /* Forms */
+    .form-group {
+        margin-bottom: 10px;
+    }
+}
+
+/* Medium devices (tablets, 576px and up) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .container {
+        padding: 15px;
+    }
+
+    /* Recipe Cards */
+    .recipe-card {
+        margin-bottom: 20px;
+    }
+
+    .card-img-top {
+        height: 175px;
+    }
+}
+
+/* Large devices (desktops, 768px and up) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .container {
+        padding: 20px;
+    }
+
+    /* Recipe Cards */
+    .recipe-card {
+        margin-bottom: 25px;
+    }
+
+    .card-img-top {
+        height: 200px;
+    }
+}
+
+/* Extra large devices (large desktops, 992px and up) */
+@media (min-width: 992px) {
+    .container {
+        padding: 30px;
+    }
+
+    /* Recipe Cards */
+    .recipe-card {
+        margin-bottom: 30px;
+    }
+
+    .card-img-top {
+        height: 225px;
+    }
+
+    /* Modals */
+    .modal-dialog {
+        max-width: 800px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .container {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .recipe-card {
+        page-break-inside: avoid;
+    }
+}

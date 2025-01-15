@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="recipe-details" id="recipe-details">
+    <div class="loading">Loading recipe details...</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const recipeId = {{ recipe_id }};
+    fetch(`/api/recipe/${recipeId}/details`)
+        .then(response => response.json())
+        .then(recipe => {
+            const container = document.getElementById('recipe-details');
+            container.innerHTML = `
+                <h2>${recipe.name}</h2>
+                <div class="recipe-info">
+                    <p><strong>Category:</strong> ${recipe.category}</p>
+                </div>
+                <div class="recipe-description">
+                    <h3>Description</h3>
+                    <p>${recipe.description}</p>
+                </div>
+                <div class="recipe-ingredients">
+                    <h3>Ingredients</h3>
+                    <ul>
+                        ${recipe.ingredients.map(ing => `
+                            <li>${ing.amount} ${ing.unit} ${ing.name}</li>
+                        `).join('')}
+                    </ul>
+                </div>
+                <div class="recipe-instructions">
+                    <h3>Instructions</h3>
+                    <p>${recipe.instructions}</p>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error loading recipe:', error);
+            document.getElementById('recipe-details').innerHTML = 
+                '<p class="error">Error loading recipe details</p>';
+        });
+});
+</script>
+{% endblock %} 

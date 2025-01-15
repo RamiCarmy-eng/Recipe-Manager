@@ -1,0 +1,170 @@
+<!-- Recipe Modal -->
+<div class="modal fade" id="recipeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recipeModalLabel">Add Recipe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="recipeForm" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="recipeName" class="form-label">Recipe Name</label>
+                            <input type="text" class="form-control" id="recipeName" 
+                                   placeholder="Enter recipe name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="recipeCategory" class="form-label">Category</label>
+                            <select class="form-select" id="recipeCategory" required>
+                                <option value="">Select category</option>
+                                <option value="main">Main Dish</option>
+                                <option value="side">Side Dish</option>
+                                <option value="dessert">Dessert</option>
+                                <option value="breakfast">Breakfast</option>
+                                <option value="snack">Snack</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="recipeImage" class="form-label">Recipe Image</label>
+                        <input type="file" class="form-control" id="recipeImage" 
+                               accept="image/*">
+                        <div id="imagePreview" class="mt-2"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="recipeDescription" class="form-label">Short Description</label>
+                        <textarea class="form-control" id="recipeDescription" rows="2"
+                                placeholder="Brief description of the recipe"></textarea>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="prepTime" class="form-label">Preparation Time</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="prepTime" 
+                                       placeholder="Time in minutes" required>
+                                <span class="input-group-text">minutes</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="servings" class="form-label">Servings</label>
+                            <input type="number" class="form-control" id="servings" 
+                                   placeholder="Number of servings" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ingredients</label>
+                        <div id="ingredientsList">
+                            <!-- Ingredients will be added here -->
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col">
+                                <select class="form-select" id="ingredientCategory">
+                                    <option value="">Select category</option>
+                                    <option value="protein">Protein</option>
+                                    <option value="vegetable">Vegetables</option>
+                                    <option value="grain">Grains</option>
+                                    <option value="dairy">Dairy</option>
+                                    <option value="spice">Spices & Herbs</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-outline-primary" 
+                                        onclick="addIngredientField()">
+                                    <i class="bi bi-plus"></i> Add Ingredient
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="recipeInstructions" class="form-label">Instructions</label>
+                        <textarea class="form-control" id="recipeInstructions" rows="6"
+                                placeholder="1. First step...&#10;2. Second step...&#10;3. Third step..."
+                                required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="recipeTips" class="form-label">Tips & Notes</label>
+                        <textarea class="form-control" id="recipeTips" rows="2"
+                                placeholder="Any special tips or notes for this recipe"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveRecipe()">Save Recipe</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recipe View Modal -->
+<div class="modal fade" id="recipeViewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recipeViewModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <img id="recipeViewImage" class="img-fluid rounded mb-3" alt="Recipe Image">
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <strong>Category:</strong>
+                            <span id="recipeViewCategory"></span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Preparation Time:</strong>
+                            <span id="recipeViewPrepTime"></span> minutes
+                        </div>
+                        <div class="mb-3">
+                            <strong>Servings:</strong>
+                            <span id="recipeViewServings"></span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Author:</strong>
+                            <span id="recipeViewAuthor"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <p id="recipeViewDescription"></p>
+                </div>
+
+                <div class="mb-3">
+                    <strong>Ingredients:</strong>
+                    <ul id="recipeViewIngredients" class="list-group">
+                        <!-- Ingredients will be loaded here -->
+                    </ul>
+                </div>
+
+                <div class="mb-3">
+                    <strong>Instructions:</strong>
+                    <div id="recipeViewInstructions"></div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>Tips & Notes:</strong>
+                    <p id="recipeViewTips"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-primary" onclick="addToShoppingList()">
+                    <i class="bi bi-cart-plus"></i> Add to Shopping List
+                </button>
+            </div>
+        </div>
+    </div>
+</div> 

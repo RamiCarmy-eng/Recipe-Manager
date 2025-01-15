@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Recipe Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Welcome to Recipe Manager</h1>
+
+    {% if current_user.is_authenticated %}
+    <div class="row">
+        <div class="col-md-4">
+            <h3>Quick Actions</h3>
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <a href="{{ url_for('recipes') }}">View All Recipes</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="{{ url_for('add_recipe') }}">Add New Recipe</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="col-md-8">
+            <h3>Recent Recipes</h3>
+            {% if recent_recipes %}
+            <div class="row">
+                {% for recipe in recent_recipes %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        {% if recipe.image %}
+                        <img src="{{ url_for('static', filename=recipe.image) }}"
+                             class="card-img-top" alt="{{ recipe.name }}">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ recipe.name }}</h5>
+                            <p class="card-text">{{ recipe.description[:100] }}...</p>
+                            <a href="{{ url_for('view_recipe', recipe_id=recipe.id) }}"
+                               class="btn btn-primary">View Recipe</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No recipes found. Why not <a href="{{ url_for('add_recipe') }}">add one</a>?</p>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="jumbotron">
+        <h2>Share and Discover Amazing Recipes</h2>
+        <p class="lead">Join our community to share your favorite recipes and discover new ones!</p>
+        <hr class="my-4">
+        <p>Get started by creating an account or logging in.</p>
+        <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}" role="button">Register</a>
+        <a class="btn btn-secondary btn-lg" href="{{ url_for('login') }}" role="button">Login</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

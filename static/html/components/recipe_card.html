@@ -1,0 +1,20 @@
+<div class="recipe-card" data-recipe-id="{{ recipe.id }}">
+    <div class="card h-100">
+        <img src="{{ recipe.image_url or '/static/images/placeholder.png' }}" 
+             class="card-img-top" alt="{{ recipe.name }}">
+        <div class="card-body">
+            <h5 class="card-title">{{ recipe.name }}</h5>
+            <p class="card-text">{{ recipe.description }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <button class="btn btn-primary btn-sm" onclick="showRecipeDetails({{ recipe.id }})">
+                    View Details
+                </button>
+                <div class="form-check">
+                    <input class="form-check-input recipe-select" type="checkbox" value="{{ recipe.id }}">
+                    <input type="number" class="form-control form-control-sm servings-input" 
+                           value="1" min="1" max="99">
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

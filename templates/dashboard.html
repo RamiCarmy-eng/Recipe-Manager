@@ -1,0 +1,47 @@
+<!-- Main application dashboard -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Recipe Dashboard</h1>
+    
+    <div class="nav-tabs">
+        <div class="tabs-left">
+            <button class="tab active" data-tab="all">All Recipes</button>
+            <button class="tab" data-tab="favorites">Favorites</button>
+            <button class="tab" data-tab="my-recipes">My Recipes</button>
+            <button class="tab" data-tab="categories">Categories</button>
+        </div>
+        <div class="tabs-right">
+            <a href="#" class="add-recipe-btn" onclick="showAddRecipeModal()">Add Recipe</a>
+        </div>
+    </div>
+
+    <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search recipes...">
+        <select id="category-filter">
+            <option value="">All Categories</option>
+        </select>
+    </div>
+    
+    <div id="recipe-container" class="recipe-grid"></div>
+</div>
+
+<!-- Add Recipe Modal -->
+<div id="add-recipe-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Add New Recipe</h2>
+        <form id="add-recipe-form">
+            <input type="text" name="name" placeholder="Recipe Name" required>
+            <input type="text" name="category" placeholder="Category" required>
+            <textarea name="description" placeholder="Description" required></textarea>
+            <button type="submit">Add Recipe</button>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+{% endblock %}

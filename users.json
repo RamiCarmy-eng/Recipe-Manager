@@ -1,0 +1,1 @@
+{"manager": {"password": "$2b$12$06jcbgGAvG3RyO0uXH7UduUkwTh7pghRjNcqNQAnDgfIVTMQTCJvW", "role": "manager"}, "1": {"id": 1, "username": "admin", "password_hash": "scrypt:32768:8:1$Gc3zSFkWmn9r2rH3$c46c1d520b677f07969eae6af6e0821ecf0721b024c9379a48dcc4a6ee1bf19c5fe9ff8466d949a1fa7f4616e066ffd170d61951e4e4b17c47df9996939a76dd", "is_admin": true}}

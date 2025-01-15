@@ -1,0 +1,26 @@
+<div class="ingredient-item mb-2">
+    <div class="row g-2">
+        <div class="col-md-4">
+            <input type="text" class="form-control ingredient-name" 
+                   placeholder="Ingredient name" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control ingredient-amount" 
+                   placeholder="Amount" step="0.1" min="0">
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control ingredient-unit" 
+                   placeholder="Unit">
+        </div>
+        <div class="col-md-3">
+            <input type="text" class="form-control ingredient-category" 
+                   placeholder="Category">
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-outline-danger btn-sm" 
+                    onclick="this.closest('.ingredient-item').remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+</div> 

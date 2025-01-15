@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    image: recipe-manager
+    container_name: recipe-manager-web
+    restart: unless-stopped
+    environment:
+      - FLASK_APP=wsgi.py
+      - FLASK_ENV=production
+      - DATABASE_URL=sqlite:///instance/recipes.db
+      - SECRET_KEY=${SECRET_KEY:-default-secret-key-change-me}
+      - GUNICORN_WORKERS=4
+      - GUNICORN_BIND=0.0.0.0:8000
+    volumes:
+      - ./instance:/app/instance
+      - ./logs:/app/logs
+      - ./static/uploads:/app/static/uploads
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: nginx:alpine
+    container_name: recipe-manager-nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./static:/app/static:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+
+volumes:
+  instance:
+  logs:
+  uploads: 
