@@ -18,15 +18,19 @@ class Recipe(db.Model):
 
     ingredients = db.relationship('Ingredient', backref='recipe', lazy=True)
 
+    # Define relationships with back_populates
+    favorites = db.relationship('Favorite', back_populates='recipe')
+    comments = db.relationship('Comment', back_populates='recipe')
+
 class Ingredient(db.Model):
     __tablename__ = 'ingredients'
+    __table_args__ = {'extend_existing': True}  # Add this line
 
     id = db.Column(db.Integer, primary_key=True)
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Float)
     unit = db.Column(db.String(50))
-    description = db.Column(db.Text)
     category = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)

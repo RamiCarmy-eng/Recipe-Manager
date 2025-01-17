@@ -26,4 +26,12 @@ def setup_logging(app):
     app.logger.addHandler(console_handler)
 
     app.logger.setLevel(logging.INFO)
-    app.logger.info('Recipe Manager startup') 
+    app.logger.info('Recipe Manager startup')
+
+class LoggingConfig:
+    # Logging settings
+    LOG_TO_STDOUT = os.getenv('LOG_TO_STDOUT', 'false').lower() == 'true'
+    LOG_TO_FILE = True
+    LOG_FILE = 'logs/recipe_master.log'
+    LOG_LEVEL = 'INFO'
+    LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import click
 from flask import current_app, g
@@ -34,4 +35,11 @@ def init_db_command():
 
 def init_app(app):
     app.teardown_appcontext(close_db)
-    app.cli.add_command(init_db_command) 
+    app.cli.add_command(init_db_command)
+
+class DatabaseConfig:
+    # Database settings
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_PATH', 'sqlite:///instance/recipes.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = False  # Set to True to see SQL queries
+    DATABASE_CONNECT_OPTIONS = {}

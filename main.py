@@ -10,30 +10,44 @@ import time
 import uuid
 from datetime import datetime
 from functools import wraps
-
+import flask
+import json
+from flask_login import current_user
 import click
 from PIL import Image
-from flask import Flask, render_template, request, redirect, url_for, flash
-# Third-party imports
 from flask import (
-    jsonify,
-    send_from_directory,
-    send_file,
-    session,
-    g,
-    abort
+    Flask, render_template, request, redirect,send_from_directory,
+    url_for, flash, session, abort, send_file,jsonify,g
 )
-from flask_login import LoginManager
-from werkzeug.security import check_password_hash, generate_password_hash
+from flask_login import (
+    LoginManager, login_user, logout_user,
+    login_required, current_user
+)
+from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from datetime import datetime
+import os
+from functools import wraps
 
-from category_helpers import CategoryHelper
+# Import helpers
+from utils.category_helpers import  CategoryHelper # Create this file
 # Local imports
-from extensions import db
-from models import User, Recipe, Ingredient
+from extensions import db, login_manager
+from models import (
+    User, Recipe, Ingredient, Category,
+    IngredientCategory, Favorite, Comment,
+    ShoppingList, ShoppingListItem
+)
+from config import Config, AppConfig
+
+# For PDF generation
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 
 # Create Flask app
 app = Flask(__name__)
+app.config.from_object(AppConfig)
 
 # Configuration
 app.config.update(
@@ -64,28 +78,22 @@ login_manager.login_view = 'login'
 
 # Initialize extensions
 db.init_app(app)
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 # Create category helper instance
 helper = CategoryHelper()
+login_manager.init_app(app)
+
 
 # Create tables within application context
 with app.app_context():
     db.create_all()
 
 
-# Database functions
-def get_db():
-    if 'db' not in g:
-        g.db = sqlite3.connect(
-            app.config['DATABASE'],
-            detect_types=sqlite3.PARSE_DECLTYPES
-        )
-        g.db.row_factory = sqlite3.Row
-    return g.db
-
-
 @login_manager.user_loader
 def load_user(user_id):
+    from models import User
     return User.query.get(int(user_id))
 
 
@@ -97,7 +105,6 @@ def close_db(e=None):
 
 def init_db():
     with app.app_context():
-        db = get_db()
         with app.open_resource('schema.sql') as f:
             db.executescript(f.read().decode('utf8'))
 
@@ -128,17 +135,22 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # First check Flask-Login authentication
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+
+        # Then check session (as backup)
         if 'user_id' not in session:
             return redirect(url_for('login'))
 
-        user = get_user_by_id(session['user_id'])
-        if not user or user['role'] != 'admin':
-            abort(403)
+        # Check both current_user and session for admin role
+        if not current_user.is_admin() or session.get('role') != 'admin':
+            flash('Access denied. Admin privileges required.', 'error')
+            abort(403)  # Forbidden
 
         return f(*args, **kwargs)
 
     return decorated_function
-
 
 # Helper functions
 def allowed_file(filename):
@@ -146,12 +158,10 @@ def allowed_file(filename):
 
 
 def get_user_by_id(user_id):
-    db = get_db()
     return db.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
 
 
 def get_user_by_username(username):
-    db = get_db()
     return db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
 
 
@@ -203,69 +213,27 @@ def home():
     return render_template('home.html', recent_recipes=recent_recipes)
 
 
-"""@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        db = get_db()
-        error = None
-
-        if not username:
-            error = 'Username is required.'
-        elif not password:
-            error = 'Password is required.'
-        else:
-            user = get_user_by_username(username)
-
-            if user is None:
-                error = 'Incorrect username.'
-            elif not check_password_hash(user['password'], password):
-                error = 'Incorrect password.'
-
-        if error is None:
-            session.clear()
-            session['user_id'] = user['id']
-            return redirect(url_for('dashboard'))
-
-        flash(error)
-
-    return render_template('login.html')
-"""
-
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        db = get_db()
-        error = None
+
         user = User.query.filter_by(username=username).first()
 
-        if not username:
-            error = 'Username is required.'
-        elif not password:
-            error = 'Password is required.'
-        else:
-            user = get_user_by_username(username)
+        if user and check_password_hash(user.password, password):
+            # Flask-Login
+            login_user(user)
 
-            if user is None:
-                error = 'Incorrect username.'
-            elif not check_password_hash(user['password'], password):
-                error = 'Incorrect password.'
+            # Session
+            session['user_id'] = user.id
+            session['role'] = user.role
 
-        if error is None:
-            session.clear()
-            session['user_id'] = user['id']
-
-            # After successful login, redirect to dashboard
-            # return redirect(url_for('dashboard')
+            flash('Login successful!', 'success')
             return redirect(url_for('home'))
 
-        flash(error)
+        flash('Invalid username or password', 'error')
 
-    # For GET requests or if login failed
     return render_template('login.html')
 
 
@@ -280,7 +248,6 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        db = get_db()
         error = None
 
         # Validation
@@ -323,8 +290,6 @@ def register():
 def show_schema():
     if not app.debug:
         abort(404)
-
-    db = get_db()
     schema = db.execute('PRAGMA table_info(users)').fetchall()
     return {'schema': [dict(column) for column in schema]}
 
@@ -359,7 +324,6 @@ def new_recipe():
             error = 'At least one ingredient is required.'
 
         if error is None:
-            db = get_db()
             try:
                 # Save image if provided
                 image_filename = save_image(image) if image else None
@@ -400,7 +364,6 @@ def new_recipe():
 @app.route('/recipe/<int:id>')
 @login_required
 def view_recipe(id):
-    db = get_db()
     recipe = db.execute(
         '''SELECT r.*, u.username as author,
            COUNT(DISTINCT f.id) as favorite_count,
@@ -440,7 +403,6 @@ def view_recipe(id):
 @app.route('/recipe/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_recipe(id):
-    db = get_db()
     recipe = db.execute(
         'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
@@ -518,7 +480,7 @@ def edit_recipe(id):
 @app.route('/recipe/<int:id>/delete', methods=['POST'])
 @login_required
 def delete_recipe(id):
-    db = get_db()
+
     recipe = db.execute(
         'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
@@ -552,7 +514,7 @@ def delete_recipe(id):
 @app.route('/shopping-list')
 @login_required
 def shopping_list():
-    db = get_db()
+
     items = db.execute('''
         SELECT sl.*, r.name as recipe_name 
         FROM shopping_list sl
@@ -576,7 +538,7 @@ def add_to_shopping_list():
         flash('Item name is required.')
         return redirect(url_for('shopping_list'))
 
-    db = get_db()
+
     try:
         db.execute('''
             INSERT INTO shopping_list (name, amount, unit, category, recipe_id, user_id)
@@ -593,7 +555,6 @@ def add_to_shopping_list():
 @app.route('/shopping-list/<int:id>/delete', methods=['POST'])
 @login_required
 def remove_from_shopping_list(id):
-    db = get_db()
     db.execute('DELETE FROM shopping_list WHERE id = ? AND user_id = ?',
                (id, session['user_id']))
     db.commit()
@@ -603,7 +564,7 @@ def remove_from_shopping_list(id):
 @app.route('/shopping-list/clear', methods=['POST'])
 @login_required
 def clear_shopping_list():
-    db = get_db()
+
     db.execute('DELETE FROM shopping_list WHERE user_id = ?', (session['user_id'],))
     db.commit()
     return redirect(url_for('shopping_list'))
@@ -614,7 +575,7 @@ def clear_shopping_list():
 @login_required
 def meal_plan():
     start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
-    db = get_db()
+
     meals = db.execute('''
         SELECT mp.*, r.name as recipe_name, r.image as recipe_image
         FROM meal_plan mp
@@ -636,7 +597,7 @@ def add_to_meal_plan():
         flash('All fields are required.')
         return redirect(url_for('meal_plan'))
 
-    db = get_db()
+
     try:
         db.execute('''
             INSERT INTO meal_plan (date, meal_type, recipe_id, user_id)
@@ -654,7 +615,7 @@ def add_to_meal_plan():
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
-    db = get_db()
+
     total_users = db.execute('SELECT COUNT(*) as count FROM users').fetchone()['count']
     total_recipes = db.execute('SELECT COUNT(*) as count FROM recipes').fetchone()['count']
     recent_users = db.execute(
@@ -674,7 +635,7 @@ def admin_dashboard():
 @app.route('/admin/users')
 @admin_required
 def admin_users():
-    db = get_db()
+
     users = db.execute('SELECT * FROM users ORDER BY username').fetchall()
     return render_template('admin/users.html', users=users)
 
@@ -682,7 +643,6 @@ def admin_users():
 @app.route('/admin/user/<int:id>', methods=['GET', 'POST'])
 @admin_required
 def admin_edit_user(id):
-    db = get_db()
     user = db.execute('SELECT * FROM users WHERE id = ?', (id,)).fetchone()
 
     if user is None:
@@ -726,7 +686,7 @@ def admin_edit_user(id):
 @app.route('/api/recipe/<int:id>/favorite', methods=['POST'])
 @login_required
 def api_toggle_favorite(id):
-    db = get_db()
+
     favorite = db.execute('''
         SELECT * FROM favorites 
         WHERE user_id = ? AND recipe_id = ?
@@ -762,7 +722,7 @@ def forbidden_error(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    db = get_db()
+
     db.rollback()
     return render_template('errors/500.html'), 500
 
@@ -779,7 +739,7 @@ def init_db_command():
 @app.route('/users')
 @admin_required
 def manage_users():
-    db = get_db()
+
     users = db.execute('''
         SELECT u.*, 
                COUNT(DISTINCT r.id) as recipe_count,
@@ -809,7 +769,7 @@ def user_profile(id):
     if id != session['user_id'] and not is_admin():
         abort(403)
 
-    db = get_db()
+
     user = db.execute('SELECT * FROM users WHERE id = ?', (id,)).fetchone()
 
     if user is None:
@@ -930,7 +890,7 @@ def delete_user(id):
         flash('Cannot delete your own account.')
         return redirect(url_for('manage_users'))
 
-    db = get_db()
+
     user = db.execute('SELECT * FROM users WHERE id = ?', (id,)).fetchone()
 
     if user is None:
@@ -972,7 +932,7 @@ def toggle_user_ban(id):
         flash('Cannot ban your own account.')
         return redirect(url_for('manage_users'))
 
-    db = get_db()
+
     try:
         user = db.execute('SELECT * FROM users WHERE id = ?', (id,)).fetchone()
         new_status = not user['is_banned']
@@ -997,7 +957,7 @@ def toggle_user_ban(id):
 @app.route('/users/export', methods=['POST'])
 @admin_required
 def export_users():
-    db = get_db()
+
     users = db.execute('''
         SELECT u.id, u.username, u.email, u.role, u.created_at,
                COUNT(DISTINCT r.id) as recipe_count,
@@ -1038,7 +998,7 @@ def export_users():
 @app.route('/recipe/<int:id>/edit/ingredients', methods=['POST'])
 @login_required
 def edit_recipe_ingredients(id):
-    db = get_db()
+
     recipe = db.execute(
         'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
@@ -1088,7 +1048,7 @@ def edit_recipe_ingredients(id):
 @app.route('/recipe/<int:id>/edit/instructions', methods=['POST'])
 @login_required
 def edit_recipe_instructions(id):
-    db = get_db()
+
     recipe = db.execute(
         'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
@@ -1117,7 +1077,7 @@ def edit_recipe_instructions(id):
 @app.route('/recipe/<int:id>/edit/image', methods=['POST'])
 @login_required
 def edit_recipe_image(id):
-    db = get_db()
+
     recipe = db.execute(
         'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
@@ -1164,7 +1124,7 @@ def edit_recipe_image(id):
 @app.route('/recipe/<int:id>/edit/metadata', methods=['POST'])
 @login_required
 def edit_recipe_metadata(id):
-    db = get_db()
+
     recipe = db.execute(
         'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
@@ -1210,7 +1170,7 @@ def edit_recipe_metadata(id):
 @app.route('/recipe/<int:id>/versions', methods=['GET'])
 @login_required
 def recipe_versions(id):
-    db = get_db()
+
     versions = db.execute('''
         SELECT rv.*, u.username as editor
         FROM recipe_versions rv
@@ -1225,7 +1185,7 @@ def recipe_versions(id):
 @app.route('/recipe/<int:id>/restore/<int:version_id>', methods=['POST'])
 @login_required
 def restore_recipe_version(id, version_id):
-    db = get_db()
+
     recipe = db.execute(
         'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
@@ -1314,7 +1274,7 @@ def search_recipes():
     time_range = request.args.get('time', '')
     tags = request.args.getlist('tags')
 
-    db = get_db()
+
     sql_query = '''
         SELECT r.*, u.username as author,
                COUNT(DISTINCT f.id) as favorite_count,
@@ -1379,7 +1339,7 @@ def add_comment(id):
     if not content:
         return jsonify({'error': 'Comment content is required'}), 400
 
-    db = get_db()
+
     try:
         db.execute('''
             INSERT INTO comments (recipe_id, user_id, content, created_at)
@@ -1406,7 +1366,7 @@ def add_comment(id):
 @app.route('/comment/<int:id>', methods=['PUT', 'DELETE'])
 @login_required
 def manage_comment(id):
-    db = get_db()
+
     comment = db.execute('''
         SELECT * FROM comments 
         WHERE id = ? AND user_id = ?
@@ -1442,7 +1402,7 @@ def rate_recipe(id):
     if not isinstance(rating, int) or rating < 1 or rating > 5:
         return jsonify({'error': 'Invalid rating value'}), 400
 
-    db = get_db()
+
     try:
         # Check if user already rated this recipe
         existing = db.execute('''
@@ -1487,7 +1447,6 @@ def rate_recipe(id):
 @app.route('/collections', methods=['GET', 'POST'])
 @login_required
 def manage_collections():
-    db = get_db()
 
     if request.method == 'POST':
         name = request.json.get('name')
@@ -1536,7 +1495,7 @@ def manage_collection_recipes(id):
     if not recipe_id:
         return jsonify({'error': 'Recipe ID is required'}), 400
 
-    db = get_db()
+
     collection = db.execute('''
         SELECT * FROM recipe_collections 
         WHERE id = ? AND user_id = ?
@@ -1617,7 +1576,7 @@ def import_recipes():
 
     try:
         recipes_data = json.load(file)
-        db = get_db()
+
         imported_count = 0
         errors = []
 
@@ -1700,7 +1659,7 @@ def export_recipes():
     recipe_ids = request.json.get('recipe_ids', [])
     export_format = request.json.get('format', 'json')
 
-    db = get_db()
+
 
     if export_format == 'json':
         recipes = []
@@ -1821,7 +1780,7 @@ def export_recipes():
 @app.route('/api/recipe/<int:id>/nutrition', methods=['GET', 'POST'])
 @login_required
 def recipe_nutrition(id):
-    db = get_db()
+
     recipe = db.execute('SELECT * FROM recipes WHERE id = ?', (id,)).fetchone()
 
     if recipe is None:
@@ -1870,7 +1829,7 @@ def share_recipe(id):
     share_type = request.json.get('type')
     recipient = request.json.get('recipient')
 
-    db = get_db()
+
     recipe = db.execute('''
         SELECT r.*, u.username as author
         FROM recipes r
@@ -1914,7 +1873,7 @@ def share_recipe(id):
 @app.route('/api/analytics/user/<int:user_id>')
 @admin_required
 def user_analytics(user_id):
-    db = get_db()
+
     try:
         # User activity metrics
         metrics = db.execute('''
@@ -1997,7 +1956,7 @@ def user_analytics(user_id):
 @app.route('/api/recommendations')
 @login_required
 def get_recommendations():
-    db = get_db()
+
     try:
         # Based on user's favorites
         favorite_based = db.execute('''
@@ -2075,7 +2034,7 @@ def get_recommendations():
 @app.cli.command('cleanup')
 def cleanup_command():
     """Remove unused images and clean up the database."""
-    db = get_db()
+
     try:
         # Find unused images
         used_images = set()
@@ -2112,7 +2071,7 @@ def cleanup_command():
 # Background Tasks
 def update_search_index():
     """Update the search index for recipes."""
-    db = get_db()
+
     try:
         db.execute('BEGIN TRANSACTION')
 
