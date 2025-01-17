@@ -1,25 +1,15 @@
-
-myai_env/
-
 # Virtual Environment
 venv/
+myenv/
 env/
-.env/
 
-# Python
+# Python cache
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.Python
-*.py[cod]
+
+# IDE files
+.idea/
 
 # Database
-instance/
+instance/*.db
 *.db
-*.sqlite3
-
-# IDE
-.idea/
-.vscode/
-*.swp
