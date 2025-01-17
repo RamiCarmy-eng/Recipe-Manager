@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>All Recipes</h2>
+    
+    <div class="row mb-4">
+        <div class="col">
+            <form method="GET">
+                <input type="text" name="search" placeholder="Search recipes..." value="{{ search }}">
+                <select name="category">
+                    <option value="">All Categories</option>
+                    <option value="Breakfast">Breakfast</option>
+                    <option value="Lunch">Lunch</option>
+                    <option value="Dinner">Dinner</option>
+                    <option value="Dessert">Dessert</option>
+                </select>
+                <button type="submit">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for recipe in recipes %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                {% if recipe.image %}
+                <img src="{{ url_for('static', filename='uploads/' + recipe.image) }}" 
+                     class="card-img-top" 
+                     alt="{{ recipe.name }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5>{{ recipe.name }}</h5>
+                    <p>{{ recipe.description[:100] if recipe.description else '' }}...</p>
+                    <p>By {{ recipe.author }}</p>
+                    <p>
+                        Favorites: {{ recipe.favorite_count }}
+                        Comments: {{ recipe.comment_count }}
+                    </p>
+                    <a href="{{ url_for('view_recipe', id=recipe.id) }}" class="btn btn-primary">View Recipe</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not recipes %}
+    <div>No recipes found.</div>
+    {% endif %}
+</div>
+{% endblock %}

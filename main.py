@@ -10,14 +10,13 @@ import time
 import uuid
 from datetime import datetime
 from functools import wraps
-import flask
-import json
-from flask_login import current_user
-import click
+
+# Third-party imports
 from PIL import Image
+import click
 from flask import (
-    Flask, render_template, request, redirect,send_from_directory,
-    url_for, flash, session, abort, send_file,jsonify,g
+    Flask, render_template, request, redirect, send_from_directory,
+    url_for, flash, session, abort, send_file, jsonify, g
 )
 from flask_login import (
     LoginManager, login_user, logout_user,
@@ -25,26 +24,21 @@ from flask_login import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from datetime import datetime
-import os
-from functools import wraps
-
-# Import helpers
-from utils.category_helpers import  CategoryHelper # Create this file
-# Local imports
-from extensions import db, login_manager
-from models import (
-    User, Recipe, Ingredient, Category,
-    IngredientCategory, Favorite, Comment,
-    ShoppingList, ShoppingListItem
-)
-from config import Config, AppConfig
-
-# For PDF generation
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 
+# Local imports
+from extensions import db, login_manager
+from utils.category_helpers import CategoryHelper
+from config import Config, AppConfig
+
+# Model imports - all in one place
+from models import (
+    User, Recipe, Ingredient, Category,
+    Favorite, Comment, RecipeIngredient,
+    ShoppingList, ShoppingListItem
+)
 # Create Flask app
 app = Flask(__name__)
 app.config.from_object(AppConfig)
@@ -300,6 +294,9 @@ def show_schema():
 def dashboard():
     return render_template('dashboard.html')
 
+@app.template_filter('nl2br')
+def nl2br(value):
+    return value.replace('\n', '<br>\n') if value else ''
 
 @app.route('/recipe/new', methods=['GET', 'POST'])
 @login_required
@@ -364,41 +361,53 @@ def new_recipe():
 @app.route('/recipe/<int:id>')
 @login_required
 def view_recipe(id):
-    recipe = db.execute(
-        '''SELECT r.*, u.username as author,
-           COUNT(DISTINCT f.id) as favorite_count,
-           EXISTS(SELECT 1 FROM favorites 
-                 WHERE recipe_id = r.id AND user_id = ?) as is_favorite
+    # Get recipe with all details
+    recipe = db.execute('''
+        SELECT r.*, u.username as author
         FROM recipes r
         JOIN users u ON r.user_id = u.id
-        LEFT JOIN favorites f ON r.id = f.recipe_id
         WHERE r.id = ?
-        GROUP BY r.id''',
-        (session['user_id'], id)
-    ).fetchone()
+    ''', [id]).fetchone()
 
-    if recipe is None:
+    if not recipe:
         abort(404)
 
-    ingredients = db.execute(
-        'SELECT * FROM recipe_ingredients WHERE recipe_id = ?',
-        (id,)
-    ).fetchall()
+    # Get ingredients
+    ingredients = db.execute('''
+        SELECT ri.*, i.name
+        FROM recipe_ingredients ri
+        JOIN ingredients i ON ri.ingredient_id = i.id
+        WHERE ri.recipe_id = ?
+    ''', [id]).fetchall()
 
-    comments = db.execute(
-        '''SELECT c.*, u.username
-           FROM comments c
-           JOIN users u ON c.user_id = u.id
-           WHERE c.recipe_id = ?
-           ORDER BY c.created_at DESC''',
-        (id,)
-    ).fetchall()
+    # Get comments with authors
+    comments = db.execute('''
+        SELECT c.*, u.username as author
+        FROM comments c
+        JOIN users u ON c.user_id = u.id
+        WHERE c.recipe_id = ?
+        ORDER BY c.created_at DESC
+    ''', [id]).fetchall()
+
+    # Check if user has favorited
+    favorite = db.execute('''
+        SELECT 1 FROM favorites
+        WHERE user_id = ? AND recipe_id = ?
+    ''', [session['user_id'], id]).fetchone()
+
+    # Get favorite count
+    favorite_count = db.execute('''
+        SELECT COUNT(*) as count
+        FROM favorites
+        WHERE recipe_id = ?
+    ''', [id]).fetchone()['count']
 
     return render_template('recipe.html',
                            recipe=recipe,
                            ingredients=ingredients,
-                           comments=comments)
-
+                           comments=comments,
+                           is_favorite=favorite is not None,
+                           favorite_count=favorite_count)
 
 @app.route('/recipe/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -1332,36 +1341,25 @@ def search_recipes():
 
 
 # Recipe Comments
-@app.route('/recipe/<int:id>/comments', methods=['POST'])
+@app.route('/api/recipe/<int:id>/comment', methods=['POST'])
 @login_required
-def add_comment(id):
-    content = request.json.get('content')
-    if not content:
-        return jsonify({'error': 'Comment content is required'}), 400
+def api_add_comment(id):
+    data = request.get_json()
+    content = data.get('content', '').strip()
 
+    if not content:
+        return jsonify({'success': False, 'message': 'Comment cannot be empty'})
 
     try:
         db.execute('''
-            INSERT INTO comments (recipe_id, user_id, content, created_at)
-            VALUES (?, ?, ?, ?)
-        ''', (id, session['user_id'], content, datetime.now()))
+            INSERT INTO comments (user_id, recipe_id, content, created_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (session['user_id'], id, content))
         db.commit()
-
-        # Get the newly created comment with user info
-        comment = db.execute('''
-            SELECT c.*, u.username
-            FROM comments c
-            JOIN users u ON c.user_id = u.id
-            WHERE c.id = last_insert_rowid()
-        ''').fetchone()
-
-        return jsonify({
-            'success': True,
-            'comment': dict(comment)
-        })
-    except sqlite3.Error as e:
-        return jsonify({'error': str(e)}), 400
-
+        return jsonify({'success': True})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'success': False, 'message': 'Failed to add comment'})
 
 @app.route('/comment/<int:id>', methods=['PUT', 'DELETE'])
 @login_required
@@ -2188,16 +2186,70 @@ def recipes():
     category = request.args.get('category', '')
 
     # Start with base query
-    query = Recipe.query \
-        .join(User) \
-        .outerjoin(Favorite) \
-        .outerjoin(Comment) \
-        .with_entities(
+    query = db.session.query(
         Recipe,
         User.username.label('author'),
         db.func.count(db.distinct(Favorite.id)).label('favorite_count'),
         db.func.count(db.distinct(Comment.id)).label('comment_count')
+    ).select_from(Recipe) \
+     .join(User, User.id == Recipe.user_id) \
+     .outerjoin(Favorite, Favorite.recipe_id == Recipe.id) \
+     .outerjoin(Comment, Comment.recipe_id == Recipe.id)
+
+    # Add filters
+    if search:
+        query = query.filter(
+            db.or_(
+                Recipe.name.ilike(f'%{search}%'),
+                Recipe.description.ilike(f'%{search}%')
+            )
+        )
+
+    if category:
+        query = query.filter(Recipe.category == category)
+
+    # Group and order
+    recipes_data = query \
+        .group_by(Recipe.id, User.username) \
+        .order_by(Recipe.created_at.desc()) \
+        .all()
+
+    # Transform the results
+    recipes = [{
+        'id': row.Recipe.id,
+        'name': row.Recipe.name,
+        'description': row.Recipe.description,
+        'image': row.Recipe.image,
+        'author': row.author,
+        'favorite_count': row.favorite_count,
+        'comment_count': row.comment_count
+    } for row in recipes_data]
+
+    return render_template(
+        'recipes.html',
+        recipes=recipes,
+        search=search,
+        category=category
     )
+
+# API endpoint if needed
+@app.route('/recipes')
+@login_required
+def list_recipes():
+    search = request.args.get('search', '')
+    category = request.args.get('category', '')
+
+    # Start with base query with explicit join conditions
+    query = Recipe.query \
+        .join(User, Recipe.user_id == User.id) \
+        .outerjoin(Favorite, Recipe.id == Favorite.recipe_id) \
+        .outerjoin(Comment, Recipe.id == Comment.recipe_id) \
+        .with_entities(
+            Recipe,
+            User.username.label('author'),
+            db.func.count(db.distinct(Favorite.id)).label('favorite_count'),
+            db.func.count(db.distinct(Comment.id)).label('comment_count')
+        )
 
     # Add filters
     if search:
@@ -2223,48 +2275,6 @@ def recipes():
         search=search,
         category=category
     )
-
-
-# API endpoint if needed
-@app.route('/api/recipes')
-@login_required
-def api_recipes():
-    search = request.args.get('search', '')
-    category = request.args.get('category', '')
-
-    query = Recipe.query \
-        .join(User) \
-        .with_entities(
-        Recipe.id,
-        Recipe.name,
-        Recipe.description,
-        Recipe.category,
-        Recipe.image,
-        User.username.label('author')
-    )
-
-    if search:
-        query = query.filter(
-            db.or_(
-                Recipe.name.ilike(f'%{search}%'),
-                Recipe.description.ilike(f'%{search}%')
-            )
-        )
-
-    if category:
-        query = query.filter(Recipe.category == category)
-
-    recipes = query.order_by(Recipe.created_at.desc()).all()
-
-    return jsonify([{
-        'id': r.id,
-        'name': r.name,
-        'description': r.description,
-        'category': r.category,
-        'image': r.image,
-        'author': r.author
-    } for r in recipes])
-
 
 # Start background thread if not in debug mode
 if not app.debug:  # Using app is correct

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Recipe Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1>{{ recipe.name }}</h1>
+            <p class="text-muted">By {{ author }} | {{ recipe.created_at.strftime('%B %d, %Y') }}</p>
+        </div>
+    </div>
+
+    <!-- Recipe Image and Details -->
+    <div class="row mb-4">
+        {% if recipe.image %}
+        <div class="col-md-6">
+            <img src="{{ url_for('static', filename='uploads/' + recipe.image) }}" 
+                 class="img-fluid rounded" 
+                 alt="{{ recipe.name }}">
+        </div>
+        {% endif %}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Details</h5>
+                    <p>{{ recipe.description }}</p>
+                    <p><strong>Category:</strong> {{ recipe.category }}</p>
+                    <p><strong>Prep Time:</strong> {{ recipe.prep_time }} minutes</p>
+                    <p><strong>Servings:</strong> {{ recipe.servings }}</p>
+                    <div class="favorite-section">
+                        <span class="badge bg-primary">{{ favorite_count }} Favorites</span>
+                        <button 
+                            onclick="toggleFavorite({{ recipe.id }})" 
+                            class="btn btn-sm {% if is_favorite %}btn-danger{% else %}btn-primary{% endif %} favorite-btn"
+                            data-recipe-id="{{ recipe.id }}"
+                        >
+                            {% if is_favorite %}Unfavorite{% else %}Favorite{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ingredients -->
+    <div class="row mb-4">
+        <div class="col">
+            <h3>Ingredients</h3>
+            <ul class="list-group">
+                {% for ingredient in ingredients %}
+                <li class="list-group-item">
+                    {{ ingredient.amount }} {{ ingredient.unit }} {{ ingredient.name }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="row mb-4">
+        <div class="col">
+            <h3>Instructions</h3>
+            <p>{{ recipe.instructions | nl2br }}</p>
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <h3>Comments</h3>
+            
+            <!-- Add Comment Form -->
+            <div class="mb-4">
+                <textarea id="commentContent" class="form-control" rows="3" placeholder="Write a comment..."></textarea>
+                <button onclick="addComment()" class="btn btn-primary mt-2">Add Comment</button>
+            </div>
+
+            <!-- Comments List -->
+            <div id="commentsList">
+                {% for comment in comments %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <p class="card-text">{{ comment.content }}</p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                By {{ comment.author }} on {{ comment.created_at.strftime('%B %d, %Y') }}
+                            </small>
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Favorite toggle function
+function toggleFavorite(recipeId) {
+    fetch(`/api/recipe/${recipeId}/favorite`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const btn = document.querySelector(`.favorite-btn[data-recipe-id="${recipeId}"]`);
+            if (data.is_favorite) {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-danger');
+                btn.textContent = 'Unfavorite';
+            } else {
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-primary');
+                btn.textContent = 'Favorite';
+            }
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update favorite status');
+    });
+}
+
+// Add comment function
+function addComment() {
+    const content = document.getElementById('commentContent').value.trim();
+    
+    if (!content) {
+        alert('Please enter a comment');
+        return;
+    }
+    
+    fetch(`/api/recipe/{{ recipe.id }}/comment`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: content }),
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            document.getElementById('commentContent').value = '';
+            location.reload();
+        } else {
+            alert(data.message || 'Failed to add comment');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to add comment. Please try again.');
+    });
+}
+</script>
+{% endblock %} 

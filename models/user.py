@@ -2,6 +2,10 @@ from datetime import datetime
 from flask_login import UserMixin
 from extensions import db
 
+from datetime import datetime
+from flask_login import UserMixin
+from extensions import db
+
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -15,10 +19,11 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
-    # Define relationships without backrefs
+    # Define relationships with back_populates
+    recipes = db.relationship('Recipe', back_populates='user', lazy=True)
     favorites = db.relationship('Favorite', back_populates='user')
     comments = db.relationship('Comment', back_populates='user')
-    shopping_lists = db.relationship('ShoppingList', back_populates='user')
-    
+    shopping_lists = db.relationship('ShoppingList', back_populates='user', lazy=True)
+
     def is_admin(self):
         return self.role == 'admin'
