@@ -1,29 +1,53 @@
 import os
+from flask import Flask
+from extensions import db, login_manager
+from app_config import config
+import models
 
-from dotenv import load_dotenv
+def create_app():
+    app = Flask(__name__, 
+                template_folder='templates',
+                static_folder='static')
+    
+    # Set configuration
+    app.config.update(config)
+    print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
-# Load environment variables from .env file
-load_dotenv()
+    # Initialize extensions
+    db.init_app(app)
+    login_manager.init_app(app)
 
-# Set the path to the application directory
-basedir = os.path.abspath(os.path.dirname(__file__))
-print(f"basedir {basedir}")
-input("wait")
-# Import the create_app function
-from config.factory import create_app
+    # Import blueprints
+    from routes.admin import admin_bp
+    from routes.auth import auth_bp
+    from routes.main import main_bp
+    from routes.recipe import recipe_bp
+    from routes.shopping import shopping_bp
+    from routes.collaborative import collaborative_bp
+    from routes.ingredient import ingredient_bp
+    from routes.category import category_bp
+    from routes.favorite import favorite_bp
+    from routes.comment import comment_bp
+    from routes.template import template_bp
 
-# Create the application instance
+    # Register blueprints
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(main_bp)
+    app.register_blueprint(recipe_bp)
+    app.register_blueprint(shopping_bp)
+    app.register_blueprint(collaborative_bp)
+    app.register_blueprint(ingredient_bp)
+    app.register_blueprint(category_bp)
+    app.register_blueprint(favorite_bp)
+    app.register_blueprint(comment_bp)
+    app.register_blueprint(template_bp)
+
+    return app
+
 app = create_app()
 
 if __name__ == '__main__':
-    # Run the app with the host and port specified in environment variables
-    # or use defaults if not specified
-    host = os.getenv('FLASK_HOST', '0.0.0.0')
-    port = int(os.getenv('FLASK_PORT', 5000))
-    debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
-
-    app.run(
-        host=host,
-        port=port,
-        debug=debug
-    )
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)

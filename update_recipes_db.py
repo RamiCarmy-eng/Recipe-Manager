@@ -11,10 +11,10 @@ def cleanup_database():
 
         # Delete all records from both tables
         cursor.execute('DELETE FROM ingredients')
-        cursor.execute('DELETE FROM recipes')
+        cursor.execute('DELETE FROM recipes_images')
 
         # Reset the auto-increment counters
-        cursor.execute('DELETE FROM sqlite_sequence WHERE name="recipes"')
+        cursor.execute('DELETE FROM sqlite_sequence WHERE name="recipes_images"')
         cursor.execute('DELETE FROM sqlite_sequence WHERE name="ingredients"')
 
         cursor.execute('COMMIT')
@@ -70,7 +70,7 @@ def populate_database():
         for recipe in recipes:
             # Insert recipe with proper category
             cursor.execute('''
-                INSERT INTO recipes (
+                INSERT INTO recipes_images (
                     user_id,
                     name,
                     category,
@@ -120,7 +120,7 @@ def populate_database():
                 ))
 
         cursor.execute('COMMIT')
-        print("Successfully populated database with recipes and ingredients!")
+        print("Successfully populated database with recipes_images and ingredients!")
 
     except Exception as e:
         cursor.execute('ROLLBACK')
@@ -136,27 +136,27 @@ def verify_database():
     cursor = db.cursor()
 
     try:
-        # Count recipes
-        cursor.execute('SELECT COUNT(*) FROM recipes')
+        # Count recipes_images
+        cursor.execute('SELECT COUNT(*) FROM recipes_images')
         recipe_count = cursor.fetchone()[0]
-        print(f"\nTotal recipes in database: {recipe_count}")
+        print(f"\nTotal recipes_images in database: {recipe_count}")
 
         # Count ingredients
         cursor.execute('SELECT COUNT(*) FROM ingredients')
         ingredient_count = cursor.fetchone()[0]
         print(f"Total ingredients in database: {ingredient_count}")
 
-        # Sample of recipes
+        # Sample of recipes_images
         cursor.execute('''
             SELECT r.name, r.category, r.image, COUNT(i.id) as ingredient_count
-            FROM recipes r
+            FROM recipes_images r
             LEFT JOIN ingredients i ON r.id = i.recipe_id
             GROUP BY r.id
             LIMIT 3
         ''')
         recipes = cursor.fetchall()
 
-        print("\nSample of 3 recipes with their ingredient counts:")
+        print("\nSample of 3 recipes_images with their ingredient counts:")
         for recipe in recipes:
             print(f"\nRecipe: {recipe[0]}")
             print(f"Category: {recipe[1]}")
@@ -167,7 +167,7 @@ def verify_database():
                 SELECT name, amount, unit, category
                 FROM ingredients
                 WHERE recipe_id = (
-                    SELECT id FROM recipes WHERE name = ?
+                    SELECT id FROM recipes_images WHERE name = ?
                 )
             ''', (recipe[0],))
 

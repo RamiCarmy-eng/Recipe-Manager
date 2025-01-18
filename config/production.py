@@ -16,7 +16,7 @@ class ProductionConfig:
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
 
     # Database Configuration
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///instance/recipes.db')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///instance/recipes_images.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # File Upload Configuration

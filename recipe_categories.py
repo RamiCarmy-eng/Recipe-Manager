@@ -1470,7 +1470,7 @@ RECIPE_CATEGORIES = {
                     ],
                     'Egg Alternatives': [
                         'vegan egg substitutes',
-                        'aquafaba recipes'
+                        'aquafaba recipes_images'
                     ],
                     'Vegan Baking': [
                         'vegan cakes',
@@ -1622,7 +1622,7 @@ RECIPE_CATEGORIES = {
                 },
                 'Summer Produce': {
                     'Tomato Dishes': [
-                        'fresh tomato recipes',
+                        'fresh tomato recipes_images',
                         'gazpacho'
                     ],
                     'Corn Recipes': [
@@ -1670,7 +1670,7 @@ RECIPE_CATEGORIES = {
                         'pumpkin desserts'
                     ],
                     'Apple': [
-                        'apple recipes',
+                        'apple recipes_images',
                         'apple desserts'
                     ],
                     'Root Vegetables': [

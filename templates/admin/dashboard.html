@@ -1,0 +1,145 @@
+{% extends "admin/base_admin.html" %}
+
+{% block admin_content %}
+<h1>Admin Dashboard</h1>
+
+<div class="stats-grid">
+    <!-- System Health -->
+    <div class="stat-card">
+        <h3>System Health</h3>
+        <div class="health-status {{ system_health.database.status }}">
+            <i class="fas fa-database"></i>
+            Database: {{ system_health.database.message }}
+        </div>
+        <div class="health-status {{ 'healthy' if system_health.disk_space.free > 1 else 'warning' }}">
+            <i class="fas fa-hdd"></i>
+            Disk Space: {{ system_health.disk_space.free }}GB free
+        </div>
+        <div class="health-status {{ 'healthy' if system_health.error_count == 0 else 'warning' }}">
+            <i class="fas fa-exclamation-triangle"></i>
+            Recent Errors: {{ system_health.error_count }}
+        </div>
+    </div>
+
+    <!-- User Stats -->
+    <div class="stat-card">
+        <h3>User Statistics</h3>
+        <p>Total Users: {{ stats.total_users }}</p>
+        <p>Active Users: {{ system_health.active_users }}</p>
+    </div>
+
+    <!-- Content Stats -->
+    <div class="stat-card">
+        <h3>Content Statistics</h3>
+        <p>Total Recipes: {{ stats.total_recipes }}</p>
+        <p>Categories: {{ stats.total_categories }}</p>
+    </div>
+</div>
+
+<div class="recent-activity">
+    <h2>Recent Activity</h2>
+    
+    <!-- Recent Users -->
+    <div class="activity-section">
+        <h3>New Users</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in stats.recent_users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Recent Recipes -->
+    <div class="activity-section">
+        <h3>New Recipes</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for recipe in stats.recent_recipes %}
+                <tr>
+                    <td>{{ recipe.name }}</td>
+                    <td>{{ recipe.user.username }}</td>
+                    <td>{{ recipe.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Recent Errors -->
+    <div class="activity-section">
+        <h3>Recent Errors</h3>
+        <div class="error-log">
+            {% for error in stats.recent_errors %}
+            <div class="error-entry">
+                {{ error }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.health-status {
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    border-radius: 4px;
+}
+
+.health-status.healthy { background: #d4edda; }
+.health-status.warning { background: #fff3cd; }
+.health-status.error { background: #f8d7da; }
+
+.activity-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.error-log {
+    max-height: 300px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.error-entry {
+    padding: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+    font-family: monospace;
+}
+</style>
+{% endblock %} 

@@ -3,12 +3,12 @@ import os
 
 def reset_db():
     # Delete the existing database file
-    if os.path.exists('recipes.db'):
-        os.remove('recipes.db')
+    if os.path.exists('recipes_images.db'):
+        os.remove('recipes_images.db')
         print("Old database deleted")
     
     # Create new database
-    conn = sqlite3.connect('recipes.db')
+    conn = sqlite3.connect('recipes_images.db')
     c = conn.cursor()
     
     # Create users table
@@ -21,9 +21,9 @@ def reset_db():
         )
     ''')
     
-    # Create recipes table
+    # Create recipes_images table
     c.execute('''
-        CREATE TABLE IF NOT EXISTS recipes (
+        CREATE TABLE IF NOT EXISTS recipes_images (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             description TEXT,
@@ -40,7 +40,7 @@ def reset_db():
             name TEXT NOT NULL,
             amount REAL,
             unit TEXT,
-            FOREIGN KEY (recipe_id) REFERENCES recipes (id)
+            FOREIGN KEY (recipe_id) REFERENCES recipes_images (id)
         )
     ''')
     
@@ -55,7 +55,7 @@ def reset_db():
             unit TEXT,
             category TEXT,
             FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (recipe_id) REFERENCES recipes (id)
+            FOREIGN KEY (recipe_id) REFERENCES recipes_images (id)
         )
     ''')
     

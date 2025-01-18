@@ -5,7 +5,7 @@ app = Flask(__name__)
 app.secret_key = 'dev'
 
 def get_db():
-    conn = sqlite3.connect('recipes.db')
+    conn = sqlite3.connect('recipes_images.db')
     conn.row_factory = sqlite3.Row
     return conn
 

@@ -14,7 +14,7 @@ def populate_database():
 
         for recipe in recipes:
             cursor.execute('''
-                INSERT INTO recipes (
+                INSERT INTO recipes_images (
                     user_id,
                     name,
                     category,
@@ -58,7 +58,7 @@ def populate_database():
                 ))
 
         cursor.execute('COMMIT')
-        print("Successfully populated database with recipes and ingredients!")
+        print("Successfully populated database with recipes_images and ingredients!")
 
     except Exception as e:
         cursor.execute('ROLLBACK')

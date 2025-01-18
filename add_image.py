@@ -3,7 +3,7 @@ import sqlite3
 db = sqlite3.connect('instance/recipes.db')
 cursor = db.cursor()
 try:
-    cursor.execute('ALTER TABLE recipes ADD COLUMN image TEXT')
+    cursor.execute('ALTER TABLE recipes_images ADD COLUMN image TEXT')
     db.commit()
     print("Successfully added image column!")
 except sqlite3.OperationalError as e:

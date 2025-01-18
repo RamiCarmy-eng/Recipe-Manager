@@ -106,9 +106,9 @@ class RecipeManager:
         self.recipe_table = None
         self.selected_recipes = {}
 
-        # Load recipes
+        # Load recipes_images
         self.load_recipes()
-        print(f"Loaded {len(self.recipes)} recipes.")
+        print(f"Loaded {len(self.recipes)} recipes_images.")
 
         # Initialize notebook
         self.notebook = None
@@ -228,31 +228,31 @@ class RecipeManager:
         # self.root.deiconify()  # Show the main window
 
     def load_recipes(self):
-        """Load recipes from a JSON file."""
+        """Load recipes_images from a JSON file."""
         try:
             with open(self.recipe_file, "r", encoding="utf-8") as file:
                 self.recipes = json.load(file)
                 if not isinstance(self.recipes, list):
-                    raise ValueError("Invalid format: recipes should be a list.")
+                    raise ValueError("Invalid format: recipes_images should be a list.")
         except FileNotFoundError:
             print("Recipes file not found. Creating a new one.")
             self.recipes = []
             self.save_recipes()
         except json.JSONDecodeError:
-            print("Invalid recipes file format. Starting fresh.")
+            print("Invalid recipes_images file format. Starting fresh.")
             self.recipes = []
             self.save_recipes()
         except Exception as e:
-            print(f"Unexpected error while loading recipes: {e}")
+            print(f"Unexpected error while loading recipes_images: {e}")
             self.recipes = []  # Fallback to an empty list in case of any other error
 
     def save_recipes(self):
-        """Save recipes to a JSON file."""
+        """Save recipes_images to a JSON file."""
         try:
             with open(self.recipe_file, "w", encoding="utf-8") as file:
                 json.dump(self.recipes, file, indent=4)
         except IOError as e:
-            messagebox.showerror("Error", f"Failed to save recipes: {e}")
+            messagebox.showerror("Error", f"Failed to save recipes_images: {e}")
 
     def setup_gui(self):
         """Set up the main GUI with conditional tabs."""
@@ -343,17 +343,17 @@ class RecipeManager:
         query = query.lower()
         self.show_listbox.delete(0, tk.END)
 
-        if self.recipes:  # Check if recipes are loaded
+        if self.recipes:  # Check if recipes_images are loaded
             if query:  # Check if query is not empty
                 for recipe in self.recipes:
                     if query in recipe["name"].lower():
                         self.show_listbox.insert(tk.END, recipe["name"])
-            else:  # If query is empty, display all recipes
+            else:  # If query is empty, display all recipes_images
                 for recipe in self.recipes:
                     self.show_listbox.insert(tk.END, recipe["name"])
 
         else:
-            self.show_listbox.insert(tk.END, "No recipes loaded.")  # Informative message
+            self.show_listbox.insert(tk.END, "No recipes_images loaded.")  # Informative message
 
         for recipe in self.recipes:
             if query in recipe["name"].lower():
@@ -551,7 +551,7 @@ class RecipeManager:
 
         # Status label with Header style and yellow background
         self.status_label = ttk.Label(shopping_frame,
-                                      text="Select recipes and set servings to calculate shopping list",
+                                      text="Select recipes_images and set servings to calculate shopping list",
                                       style='Header.TLabel',
                                       background=COLORS['warning'],  # Yellow background
                                       foreground='black')  # Black text
@@ -595,12 +595,12 @@ class RecipeManager:
         self.recipe_table.heading("Servings", text="Servings")
         self.recipe_table.pack(fill="x", padx=5, pady=5)
 
-        # Populate the recipe table with available recipes
+        # Populate the recipe table with available recipes_images
         for recipe in self.recipes:
             self.recipe_table.insert('', 'end', values=(recipe['name'], '0'))
 
-        # Debugging: Check after inserting recipes
-        print("Treeview populated with recipes.")
+        # Debugging: Check after inserting recipes_images
+        print("Treeview populated with recipes_images.")
 
         # Bind double-click to edit servings
         # self.shopping_recipe_table.bind('<Double-1>', self.edit_servings)
@@ -678,10 +678,10 @@ class RecipeManager:
         # Clear existing items in the table
         self.recipe_table.delete(*self.recipe_table.get_children())
 
-        # Temporarily store selected recipes and their servings
+        # Temporarily store selected recipes_images and their servings
         temp_selected_recipes = self.selected_recipes.copy()
 
-        # Filter recipes based on search term
+        # Filter recipes_images based on search term
         for recipe in self.recipes:
             if search_term in recipe['name'].lower() or not search_term:
                 servings = temp_selected_recipes.get(recipe['name'], '0')
@@ -708,7 +708,7 @@ class RecipeManager:
                 messagebox.showerror("Error", "Please enter a valid positive number for servings.")
 
     def filter_shopping_recipes(self):
-        """Filter recipes based on search term while preserving servings values"""
+        """Filter recipes_images based on search term while preserving servings values"""
         search_term = self.shopping_search_var.get().lower()
 
         # Store current servings values before clearing
@@ -722,7 +722,7 @@ class RecipeManager:
         for item in self.recipe_table.get_children():
             self.recipe_table.delete(item)
 
-        # Add filtered recipes with preserved servings
+        # Add filtered recipes_images with preserved servings
         for recipe in self.recipes:
             if search_term in recipe['name'].lower() or not search_term:
                 # Get the previously set servings value or default to '0'
@@ -730,7 +730,7 @@ class RecipeManager:
                 self.recipe_table.insert('', 'end', values=(recipe['name'], servings))
 
     def apply_servings(self):
-        """Apply the entered servings to selected recipes."""
+        """Apply the entered servings to selected recipes_images."""
         selection = self.recipe_table.selection()
         if not selection:
             messagebox.showwarning("Warning", "Please select at least one recipe")
@@ -741,7 +741,7 @@ class RecipeManager:
             if servings <= 0:
                 raise ValueError("Servings must be positive")
 
-            # Update servings for selected recipes
+            # Update servings for selected recipes_images
             for item in selection:
                 self.recipe_table.set(item, "Servings", str(servings))
 
@@ -755,7 +755,7 @@ class RecipeManager:
                 foreground="red")
 
     def calculate_shopping_list_old(self):
-        """Calculate ingredients based on selected recipes and servings"""
+        """Calculate ingredients based on selected recipes_images and servings"""
         selection = self.recipe_table.selection()
         if not selection:
             messagebox.showwarning("Warning", "Please select at least one recipe")
@@ -821,7 +821,7 @@ class RecipeManager:
             self.status_label.config(text="No ingredients to display. Please check recipe servings.")
 
     def calculate_shopping_list(self):
-        """Calculate ingredients based on selected recipes and servings"""
+        """Calculate ingredients based on selected recipes_images and servings"""
         selection = self.recipe_table.selection()
         if not selection:
             messagebox.showwarning("Warning", "Please select at least one recipe")
@@ -909,7 +909,7 @@ class RecipeManager:
             self.status_label.config(text="No ingredients to display. Please check recipe servings.")
 
     def calculate_ingredients(self, selected_recipes):
-        # Calculate ingredients based on selected recipes and servings
+        # Calculate ingredients based on selected recipes_images and servings
         ingredients_dict = {}
         for recipe_name, servings in selected_recipes.items():
             recipe = next((r for r in self.recipes if r['name'] == recipe_name), None)
@@ -994,7 +994,7 @@ class RecipeManager:
                 messagebox.showerror("Error", f"Failed to delete recipe: {str(e)}")
 
     def update_delete_list(self):
-        """Update the delete listbox with filtered recipes."""
+        """Update the delete listbox with filtered recipes_images."""
         self.delete_listbox.delete(0, tk.END)
         search_term = self.delete_search_var.get().lower() if hasattr(self, 'delete_search_var') else ""
 
@@ -1245,9 +1245,9 @@ class RecipeManager:
         wb.close()
         messagebox.showinfo("Success", f"Shopping list exported to {file_path}")
 
-    def sort_recipes_alphabetically(self, json_file='recipes.json'):
-        """Sort recipes in the JSON file alphabetically by the recipe name."""
-        # Load existing recipes from the JSON file
+    def sort_recipes_alphabetically(self, json_file='recipes_images.json'):
+        """Sort recipes_images in the JSON file alphabetically by the recipe name."""
+        # Load existing recipes_images from the JSON file
         if os.path.exists(json_file):
             with open(json_file, 'r', encoding='utf-8') as file:
                 recipes = json.load(file)
@@ -1255,10 +1255,10 @@ class RecipeManager:
             print(f"{json_file} not found!")
             return
 
-        # Sort recipes by name
+        # Sort recipes_images by name
         sorted_recipes = sorted(recipes, key=lambda x: x['name'].lower())  # Alphabetically by 'name'
 
-        # Save sorted recipes back to the JSON file
+        # Save sorted recipes_images back to the JSON file
         with open(json_file, 'w', encoding='utf-8') as file:
             json.dump(sorted_recipes, file, indent=4)
 
@@ -1310,11 +1310,11 @@ class RecipeManager:
         # Example calculation logic
         total_ingredients = {}
 
-        # Iterate through selected recipes
+        # Iterate through selected recipes_images
         for item in self.recipe_table.selection():
             recipe_name = self.recipe_table.item(item, "values")[0]
 
-            # Load recipes from JSON
+            # Load recipes_images from JSON
             try:
                 with open("recipes.json", "r") as file:
                     recipes = json.load(file)
@@ -1333,7 +1333,7 @@ class RecipeManager:
         for (ingredient, unit), quantity in total_ingredients.items():
             self.result_table.insert("", tk.END, values=(ingredient, f"{quantity} {unit}"))
 
-    # ... other methods for displaying recipes, filtering, etc.
+    # ... other methods for displaying recipes_images, filtering, etc.
     def convert_to_practical_units_old(self, amount, unit, ingredient_type):
         """
         Convert measurements to practical shopping units with minimum retail packaging recommendations.
@@ -1852,7 +1852,7 @@ class RecipeManager:
         return f"{amount} {unit}", "Unable to determine package size"
 
     def setup_update_tab(self):
-        """Setup the 'Update' tab with a search box, list of recipes, and update form."""
+        """Setup the 'Update' tab with a search box, list of recipes_images, and update form."""
         # Create search box
         self.update_search_var = self.create_search_box(self.update_frame, self.update_recipe_list)
 
@@ -1931,7 +1931,7 @@ class RecipeManager:
             messagebox.showerror("Error", f"Failed to save recipe: {str(e)}")
 
     def setup_delete_tab(self):
-        """Setup the 'Delete' tab with a search box and list of recipes."""
+        """Setup the 'Delete' tab with a search box and list of recipes_images."""
         # Create search box
         self.delete_search_var = self.create_search_box(self.delete_frame, self.update_delete_list)
 
@@ -1957,7 +1957,7 @@ class RecipeManager:
         self.update_delete_list()
 
     def refresh_lists(self):
-        """Refresh all Listboxes displaying recipes."""
+        """Refresh all Listboxes displaying recipes_images."""
         self.update_show_list()
         self.update_recipe_list()
         self.update_delete_list()

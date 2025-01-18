@@ -39,7 +39,7 @@ def init_app(app):
 
 class DatabaseConfig:
     # Database settings
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_PATH', 'sqlite:///instance/recipes.db')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_PATH', 'sqlite:///instance/recipes_images.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False  # Set to True to see SQL queries
     DATABASE_CONNECT_OPTIONS = {}

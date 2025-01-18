@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Shopping List</h2>
+
+    <!-- Controls -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <!-- Add Item Form -->
+                <div class="col-md-6">
+                    <h5>Add New Item</h5>
+                    <form id="addItemForm" class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="itemName" placeholder="Item name" required>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="text" class="form-control" id="itemAmount" placeholder="Amount">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="text" class="form-control" id="itemUnit" placeholder="Unit">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="itemCategory" placeholder="Category">
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-primary">Add</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Filters -->
+                <div class="col-md-6">
+                    <h5>Filter & Sort</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <select class="form-select" id="categoryFilter">
+                                <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All Categories</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat.category }}" {% if selected_category == cat.category %}selected{% endif %}>
+                                    {{ cat.category }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select" id="sortBy">
+                                <option value="category" {% if sort_by == 'category' %}selected{% endif %}>Sort by Category</option>
+                                <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Sort by Name</option>
+                                <option value="recipe" {% if sort_by == 'recipe' %}selected{% endif %}>Sort by Recipe</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <button class="btn btn-success" onclick="exportList()">
+                        <i class="fas fa-download"></i> Export List
+                    </button>
+                    <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">
+                        <i class="fas fa-upload"></i> Import List
+                    </button>
+                    <input type="file" id="importFile" style="display: none" accept=".json"
+                           onchange="importList(this.files[0])">
+                    <button class="btn btn-info" onclick="showShareModal()">
+                        <i class="fas fa-share-alt"></i> Share List
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shopping List -->
+    <div class="row">
+        <!-- Manual Items -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title">Manual Items</h5>
+                        <button class="btn btn-sm btn-danger" onclick="clearCompleted()">Clear Completed</button>
+                    </div>
+                    <ul class="list-group" id="manualItems">
+                        {% for item in items %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="item-{{ item.id }}" data-item-id="{{ item.id }}">
+                                    <label class="form-check-label" for="item-{{ item.id }}">
+                                        <span class="quantity-display" onclick="showQuantityEdit({{ item.id }})">
+                                            {% if item.amount or item.unit %}
+                                                {{ item.amount }} {{ item.unit }}
+                                            {% endif %}
+                                        </span>
+                                        {{ item.name }}
+                                        {% if item.recipe_name %}
+                                            <small class="text-muted">(from {{ item.recipe_name }})</small>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            onclick="showQuantityEdit({{ item.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="deleteItem({{ item.id }})">×</button>
+                                </div>
+                            </div>
+                            <div id="quantity-edit-{{ item.id }}" class="quantity-edit" style="display: none">
+                                <div class="input-group input-group-sm mt-2">
+                                    <input type="text" class="form-control" placeholder="Amount" 
+                                           value="{{ item.amount or '' }}" id="amount-{{ item.id }}">
+                                    <input type="text" class="form-control" placeholder="Unit" 
+                                           value="{{ item.unit or '' }}" id="unit-{{ item.id }}">
+                                    <button class="btn btn-primary" onclick="updateQuantity({{ item.id }})">
+                                        Save
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recipe Ingredients -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Recipe Ingredients</h5>
+                    <div class="accordion" id="recipesAccordion">
+                        {% for recipe in saved_recipes %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#recipe-{{ recipe.id }}">
+                                    {{ recipe.name }}
+                                </button>
+                            </h2>
+                            <div id="recipe-{{ recipe.id }}" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <button class="btn btn-sm btn-primary mb-2"
+                                            onclick="addRecipeToList({{ recipe.id }})">
+                                        Add All to List
+                                    </button>
+                                    <ul class="list-group">
+                                        {% for ingredient in ingredients if ingredient.recipe_name == recipe.name %}
+                                        <li class="list-group-item">
+                                            {{ ingredient.amount }} {{ ingredient.unit }} {{ ingredient.name }}
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Share Shopping List</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="userSearch" 
+                           placeholder="Search users..." onkeyup="searchUsers()">
+                    <div id="userResults" class="list-group mt-2"></div>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="shareAll">
+                    <label class="form-check-label" for="shareAll">
+                        Share all items
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="shareList()">Share</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add new item
+document.getElementById('addItemForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    fetch('/api/shopping-list/item', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: document.getElementById('itemName').value,
+            amount: document.getElementById('itemAmount').value,
+            unit: document.getElementById('itemUnit').value,
+            category: document.getElementById('itemCategory').value || 'General'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+});
+
+// Delete item
+function deleteItem(itemId) {
+    if (confirm('Remove this item?')) {
+        fetch(`/api/shopping-list/item/${itemId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+// Add recipe ingredients to list
+function addRecipeToList(recipeId) {
+    fetch(`/api/shopping-list/add-recipe/${recipeId}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+// Clear completed items
+function clearCompleted() {
+    const completed = Array.from(document.querySelectorAll('#manualItems input[type="checkbox"]:checked'))
+        .map(cb => parseInt(cb.dataset.itemId));
+    
+    if (completed.length === 0) return;
+    
+    if (confirm('Remove all checked items?')) {
+        fetch('/api/shopping-list/clear-completed', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                items: completed
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+// Filter and sort
+document.getElementById('categoryFilter').addEventListener('change', function() {
+    updateFilters();
+});
+
+document.getElementById('sortBy').addEventListener('change', function() {
+    updateFilters();
+});
+
+function updateFilters() {
+    const category = document.getElementById('categoryFilter').value;
+    const sort = document.getElementById('sortBy').value;
+    window.location.href = `/shopping-list?category=${category}&sort=${sort}`;
+}
+
+// Save checked state
+document.querySelectorAll('.form-check-input').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        localStorage.setItem(this.id, this.checked);
+    });
+    
+    const saved = localStorage.getItem(checkbox.id);
+    if (saved === 'true') {
+        checkbox.checked = true;
+    }
+});
+
+// Export list
+function exportList() {
+    fetch('/api/shopping-list/export')
+        .then(response => response.json())
+        .then(data => {
+            const blob = new Blob([JSON.stringify(data, null, 2)], 
+                                {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `shopping-list-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+}
+
+// Import list
+function importList(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            fetch('/api/shopping-list/import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+        } catch (e) {
+            alert('Invalid file format');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Quantity adjustment
+function showQuantityEdit(itemId) {
+    document.getElementById(`quantity-edit-${itemId}`).style.display = 'block';
+}
+
+function updateQuantity(itemId) {
+    const amount = document.getElementById(`amount-${itemId}`).value;
+    const unit = document.getElementById(`unit-${itemId}`).value;
+    
+    fetch(`/api/shopping-list/item/${itemId}/quantity`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount, unit })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+// Sharing functionality
+let selectedUserId = null;
+
+function searchUsers() {
+    const query = document.getElementById('userSearch').value;
+    if (query.length < 2) return;
+    
+    fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            const results = document.getElementById('userResults');
+            results.innerHTML = '';
+            data.users.forEach(user => {
+                const a = document.createElement('a');
+                a.href = '#';
+                a.className = 'list-group-item list-group-item-action';
+                a.textContent = user.username;
+                a.onclick = function(e) {
+                    e.preventDefault();
+                    selectedUserId = user.id;
+                    document.getElementById('userSearch').value = user.username;
+                    results.innerHTML = '';
+                };
+                results.appendChild(a);
+            });
+        });
+}
+
+function showShareModal() {
+    new bootstrap.Modal(document.getElementById('shareModal')).show();
+}
+
+function shareList() {
+    if (!selectedUserId) {
+        alert('Please select a user to share with');
+        return;
+    }
+    
+    const shareAll = document.getElementById('shareAll').checked;
+    const items = shareAll 
+        ? Array.from(document.querySelectorAll('[data-item-id]'))
+              .map(el => parseInt(el.dataset.itemId))
+        : Array.from(document.querySelectorAll('[data-item-id]:checked'))
+              .map(el => parseInt(el.dataset.itemId));
+    
+    if (items.length === 0) {
+        alert('Please select items to share');
+        return;
+    }
+    
+    fetch(`/api/shopping-list/share/${selectedUserId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('shareModal')).hide();
+            alert('Shopping list shared successfully');
+        }
+    });
+}
+</script>
+{% endblock %} 

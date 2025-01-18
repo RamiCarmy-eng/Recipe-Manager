@@ -43,11 +43,11 @@ class CategoryHelper:
         return []
 
     def get_recipes_in_category(self, category_path: str) -> List[str]:
-        """Get recipes directly under a category"""
+        """Get recipes_images directly under a category"""
         return self.flat_categories.get(category_path, [])
 
     def search_recipes(self, query: str) -> Dict[str, List[str]]:
-        """Search for recipes across all categories"""
+        """Search for recipes_images across all categories"""
         results = defaultdict(list)
         query = query.lower()
 
@@ -106,7 +106,7 @@ def create_category_select(categories: Dict, level: int = 0) -> List[tuple]:
 
 
 def format_recipe_count(category_helper: CategoryHelper) -> Dict[str, int]:
-    """Count recipes in each category"""
+    """Count recipes_images in each category"""
     counts = {}
     for category in category_helper.flat_categories:
         counts[category] = len(category_helper.get_recipes_in_category(category))

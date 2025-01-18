@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-container">
+    <nav class="admin-sidebar">
+        <div class="admin-nav-header">
+            <h3>Admin Panel</h3>
+        </div>
+        <ul class="admin-nav">
+            <li {% if request.endpoint == 'admin.admin_dashboard' %}class="active"{% endif %}>
+                <a href="{{ url_for('admin.admin_dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li {% if 'users' in request.endpoint %}class="active"{% endif %}>
+                <a href="{{ url_for('admin.manage_users') }}">
+                    <i class="fas fa-users"></i> Users
+                </a>
+            </li>
+            <li {% if 'recipes' in request.endpoint %}class="active"{% endif %}>
+                <a href="{{ url_for('admin.manage_recipes') }}">
+                    <i class="fas fa-book"></i> Recipes
+                </a>
+            </li>
+            <li {% if 'categories' in request.endpoint %}class="active"{% endif %}>
+                <a href="{{ url_for('admin.manage_categories') }}">
+                    <i class="fas fa-tags"></i> Categories
+                </a>
+            </li>
+            <li {% if 'maintenance' in request.endpoint %}class="active"{% endif %}>
+                <a href="{{ url_for('admin.system_maintenance') }}">
+                    <i class="fas fa-tools"></i> Maintenance
+                </a>
+            </li>
+            <li {% if 'security' in request.endpoint %}class="active"{% endif %}>
+                <a href="{{ url_for('admin.security_dashboard') }}">
+                    <i class="fas fa-shield-alt"></i> Security
+                </a>
+            </li>
+            <li {% if 'logs' in request.endpoint %}class="active"{% endif %}>
+                <a href="{{ url_for('admin.view_logs') }}">
+                    <i class="fas fa-list"></i> Logs
+                </a>
+            </li>
+            <li {% if 'settings' in request.endpoint %}class="active"{% endif %}>
+                <a href="{{ url_for('admin.system_settings') }}">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </li>
+        </ul>
+    </nav>
+    
+    <main class="admin-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block admin_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.admin-container {
+    display: flex;
+    min-height: calc(100vh - 60px);
+}
+
+.admin-sidebar {
+    width: 250px;
+    background: #2c3e50;
+    color: white;
+    padding: 1rem;
+}
+
+.admin-nav {
+    list-style: none;
+    padding: 0;
+}
+
+.admin-nav li {
+    margin: 0.5rem 0;
+}
+
+.admin-nav a {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    display: block;
+    border-radius: 4px;
+}
+
+.admin-nav li.active a,
+.admin-nav a:hover {
+    background: #34495e;
+}
+
+.admin-content {
+    flex: 1;
+    padding: 2rem;
+    background: #f5f6fa;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.alert {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+}
+
+.alert-success { background: #d4edda; color: #155724; }
+.alert-error { background: #f8d7da; color: #721c24; }
+.alert-warning { background: #fff3cd; color: #856404; }
+</style>
+{% endblock %} 

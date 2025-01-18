@@ -3,12 +3,12 @@ import os
 
 def create_db():
     # Delete existing database
-    if os.path.exists('recipes.db'):
-        os.remove('recipes.db')
+    if os.path.exists('recipes_images.db'):
+        os.remove('recipes_images.db')
         print("Deleted old database")
     
     # Create new database
-    conn = sqlite3.connect('recipes.db')
+    conn = sqlite3.connect('recipes_images.db')
     cursor = conn.cursor()
     
     # Create users table

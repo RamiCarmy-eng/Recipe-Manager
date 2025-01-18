@@ -1,7 +1,7 @@
 import sqlite3
 
 def check_users():
-    conn = sqlite3.connect('recipes.db')
+    conn = sqlite3.connect('recipes_images.db')
     conn.row_factory = sqlite3.Row
     
     try:

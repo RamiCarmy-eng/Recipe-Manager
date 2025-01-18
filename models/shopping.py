@@ -25,7 +25,7 @@ class ShoppingListItem(db.Model):
     amount = db.Column(db.Float)
     unit = db.Column(db.String(50))
     checked = db.Column(db.Boolean, default=False)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'))  # Optional: track which recipe it came from
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes_images.id'))  # Optional: track which recipe it came from
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 

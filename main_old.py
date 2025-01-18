@@ -17,7 +17,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///recipes.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///recipes_images.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'dev'
 
@@ -224,7 +224,7 @@ def profile():
     return render_template('profile.html', user=user)
 
 
-@app.route('/recipes', methods=['GET', 'POST'])
+@app.route('/recipes_images', methods=['GET', 'POST'])
 def recipes():
     if request.method == 'POST':
         if 'user_id' not in session:
@@ -246,7 +246,7 @@ def recipes():
         cursor = db.cursor()
 
         cursor.execute("""
-            INSERT INTO recipes (user_id, name, category, description, prep_time, servings, instructions)
+            INSERT INTO recipes_images (user_id, name, category, description, prep_time, servings, instructions)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (session['user_id'], name, category, description, prep_time, servings, instructions))
 
@@ -268,7 +268,7 @@ def recipes():
 
         cursor.execute("""
             SELECT r.id, r.name, r.category, r.description, r.prep_time, r.servings, r.instructions
-            FROM recipes r
+            FROM recipes_images r
             ORDER BY r.name
         """)
 
@@ -315,7 +315,7 @@ def recipe(recipe_id):
         data = request.get_json()
 
         cursor.execute("""
-            UPDATE recipes
+            UPDATE recipes_images
             SET name = ?, category = ?, description = ?, 
                 prep_time = ?, servings = ?, instructions = ?
             WHERE id = ? AND user_id = ?
@@ -338,7 +338,7 @@ def recipe(recipe_id):
 
     elif request.method == 'DELETE':
         cursor.execute("""
-            DELETE FROM recipes
+            DELETE FROM recipes_images
             WHERE id = ? AND user_id = ?
         """, (recipe_id, session['user_id']))
 
@@ -351,7 +351,7 @@ def recipe(recipe_id):
     else:  # GET request
         cursor.execute("""
             SELECT r.id, r.name, r.category, r.description, r.prep_time, r.servings, r.instructions
-            FROM recipes r
+            FROM recipes_images r
             WHERE r.id = ?
         """, (recipe_id,))
 
@@ -427,7 +427,7 @@ def shopping_list():
             SELECT sl.id, r.name as recipe_name, i.name as ingredient_name, 
                    sl.amount, i.unit, sl.checked
             FROM shopping_list sl
-            JOIN recipes r ON sl.recipe_id = r.id
+            JOIN recipes_images r ON sl.recipe_id = r.id
             JOIN ingredients i ON sl.ingredient_id = i.id
             WHERE sl.user_id = ?
             ORDER BY r.name, i.name
@@ -527,7 +527,7 @@ def favorites():
         cursor.execute("""
             SELECT r.id, r.name, r.category, r.description
             FROM favorites f
-            JOIN recipes r ON f.recipe_id = r.id
+            JOIN recipes_images r ON f.recipe_id = r.id
             WHERE f.user_id = ?
             ORDER BY r.name
         """, (session['user_id'],))
@@ -552,7 +552,7 @@ def search():
 
     sql = """
         SELECT r.id, r.name, r.category, r.description, r.image_path
-        FROM recipes r
+        FROM recipes_images r
         WHERE 1=1
     """
     params = []
@@ -585,7 +585,7 @@ def get_categories():
 
     cursor.execute("""
         SELECT DISTINCT category
-        FROM recipes
+        FROM recipes_images
         ORDER BY category
     """)
 
@@ -593,7 +593,7 @@ def get_categories():
     return jsonify(categories)
 
 
-@app.route('/user/recipes')
+@app.route('/user/recipes_images')
 @login_required
 def user_recipes():
     db = get_db()
@@ -601,7 +601,7 @@ def user_recipes():
 
     cursor.execute("""
         SELECT id, name, category, description
-        FROM recipes
+        FROM recipes_images
         WHERE user_id = ?
         ORDER BY name
     """, (session['user_id'],))
@@ -652,14 +652,14 @@ def internal_error(error):
     }), 500
 
 
-@app.route('/api/recipes', methods=['GET'])
+@app.route('/api/recipes_images', methods=['GET'])
 def api_recipes():
     db = get_db()
     cursor = db.cursor()
 
     cursor.execute("""
         SELECT r.id, r.name, r.category, r.description, r.prep_time, r.servings, r.instructions
-        FROM recipes r
+        FROM recipes_images r
         ORDER BY r.name
     """)
 
@@ -701,7 +701,7 @@ def api_recipe(recipe_id):
 
     cursor.execute("""
         SELECT r.id, r.name, r.category, r.description, r.prep_time, r.servings, r.instructions
-        FROM recipes r
+        FROM recipes_images r
         WHERE r.id = ?
     """, (recipe_id,))
 
@@ -742,7 +742,7 @@ def get_recipe_details(recipe_id):
     cursor = db.cursor()
     cursor.execute('''
         SELECT r.id, r.name, r.category, r.description, r.instructions, r.prep_time, r.servings
-        FROM recipes r WHERE r.id = ?
+        FROM recipes_images r WHERE r.id = ?
     ''', (recipe_id,))
     recipe = cursor.fetchone()
     if recipe is None:

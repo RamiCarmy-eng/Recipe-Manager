@@ -1,6 +1,30 @@
 import os
 import subprocess
 import sys
+from setuptools import setup, find_packages
+
+setup(
+    name='recipe_master',
+    version='1.0.0',
+    packages=find_packages(),
+    include_package_data=True,
+    install_requires=[
+        'flask',
+        'flask-sqlalchemy',
+        'flask-migrate',
+        'flask-login',
+        'python-dotenv',
+        'werkzeug',
+        'email-validator',
+        'pillow',
+    ],
+    entry_points={
+        'console_scripts': [
+            'recipe-master=recipe_master.wsgi:main',
+        ],
+    }
+)
+
 
 def setup_project():
     """Set up the project environment"""

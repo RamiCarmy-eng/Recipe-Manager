@@ -49,7 +49,7 @@ def run_migration():
             recipe_id INTEGER NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (recipe_id) REFERENCES recipes (id),
+            FOREIGN KEY (recipe_id) REFERENCES recipes_images (id),
             UNIQUE(user_id, recipe_id)
         )
         ''')
@@ -64,7 +64,7 @@ def run_migration():
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (recipe_id) REFERENCES recipes (id)
+            FOREIGN KEY (recipe_id) REFERENCES recipes_images (id)
         )
         ''')
 

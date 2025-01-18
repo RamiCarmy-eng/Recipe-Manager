@@ -10,10 +10,10 @@ def cleanup_database():
 
         # Delete all records from both tables
         cursor.execute('DELETE FROM ingredients')
-        cursor.execute('DELETE FROM recipes')
+        cursor.execute('DELETE FROM recipes_images')
 
         # Reset the auto-increment counters
-        cursor.execute('DELETE FROM sqlite_sequence WHERE name="recipes"')
+        cursor.execute('DELETE FROM sqlite_sequence WHERE name="recipes_images"')
         cursor.execute('DELETE FROM sqlite_sequence WHERE name="ingredients"')
 
         cursor.execute('COMMIT')

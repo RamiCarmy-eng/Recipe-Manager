@@ -35,9 +35,9 @@ def init_db():
         )
         ''')
 
-        # Create recipes table with image field
+        # Create recipes_images table with image field
         cursor.execute('''
-        CREATE TABLE recipes (
+        CREATE TABLE recipes_images (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             name TEXT NOT NULL,
@@ -69,7 +69,7 @@ def init_db():
         VALUES ('admin', 'admin123', 'admin')
         ''')
 
-        # Load and process recipes from JSON
+        # Load and process recipes_images from JSON
         with open('recipes.json', 'r', encoding='utf-8') as file:
             recipes = json.load(file)
 
@@ -78,7 +78,7 @@ def init_db():
         for recipe in recipes:
             # Insert recipe
             cursor.execute('''
-                INSERT INTO recipes (
+                INSERT INTO recipes_images (
                     user_id,
                     name,
                     category,
@@ -129,11 +129,11 @@ def init_db():
         conn.commit()
 
         # Verify data
-        cursor.execute("SELECT COUNT(*) FROM recipes")
+        cursor.execute("SELECT COUNT(*) FROM recipes_images")
         recipe_count = cursor.fetchone()[0]
 
         print(f"\nDatabase created with:")
-        print(f"- {recipe_count} recipes")
+        print(f"- {recipe_count} recipes_images")
         print(f"- {total_ingredients} ingredients")
 
     except Exception as e:

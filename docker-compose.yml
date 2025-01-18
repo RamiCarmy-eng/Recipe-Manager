@@ -9,7 +9,7 @@ services:
     environment:
       - FLASK_APP=wsgi.py
       - FLASK_ENV=production
-      - DATABASE_URL=sqlite:///instance/recipes.db
+      - DATABASE_URL=sqlite:///instance/recipes_images.db
       - SECRET_KEY=${SECRET_KEY:-default-secret-key-change-me}
       - GUNICORN_WORKERS=4
       - GUNICORN_BIND=0.0.0.0:8000

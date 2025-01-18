@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Recipe Master{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    <h1>Welcome to Recipe Master</h1>
+    <p>Your personal recipe collection</p>
+    
+    {% if current_user.is_authenticated %}
+        <div class="user-actions">
+            <a href="{{ url_for('main.index') }}" class="btn">Home</a>
+            {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('admin.dashboard') }}" class="btn">Admin Dashboard</a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}" class="btn">Logout</a>
+        </div>
+    {% else %}
+        <div class="auth-actions">
+            <a href="{{ url_for('auth.login') }}" class="btn">Login</a>
+            <a href="{{ url_for('auth.register') }}" class="btn">Register</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

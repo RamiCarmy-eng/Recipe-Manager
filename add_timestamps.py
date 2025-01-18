@@ -7,14 +7,14 @@ def add_timestamps():
     
     try:
         # Add created_at column
-        cursor.execute('ALTER TABLE recipes ADD COLUMN created_at DATETIME')
+        cursor.execute('ALTER TABLE recipes_images ADD COLUMN created_at DATETIME')
         
         # Add updated_at column
-        cursor.execute('ALTER TABLE recipes ADD COLUMN updated_at DATETIME')
+        cursor.execute('ALTER TABLE recipes_images ADD COLUMN updated_at DATETIME')
         
         # Update existing rows
         current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        cursor.execute('UPDATE recipes SET created_at = ?, updated_at = ?', 
+        cursor.execute('UPDATE recipes_images SET created_at = ?, updated_at = ?',
                       (current_time, current_time))
         
         conn.commit()

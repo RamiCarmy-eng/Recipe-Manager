@@ -10,13 +10,22 @@ import time
 import uuid
 from datetime import datetime
 from functools import wraps
-
+from sqlalchemy.orm import joinedload
 # Third-party imports
 from PIL import Image
 import click
+from flask_mail import Mail, Message
+import random
+import string
+from routes.admin import admin_bp
+
+from flask_mail import Mail, Message
+from datetime import datetime
+import logging
+from logging.handlers import RotatingFileHandler
 from flask import (
     Flask, render_template, request, redirect, send_from_directory,
-    url_for, flash, session, abort, send_file, jsonify, g
+    url_for, flash, session, abort, send_file, jsonify, g,Blueprint
 )
 from flask_login import (
     LoginManager, login_user, logout_user,
@@ -39,14 +48,17 @@ from models import (
     Favorite, Comment, RecipeIngredient,
     ShoppingList, ShoppingListItem
 )
+
+main_bp = Blueprint('main', __name__)
+
 # Create Flask app
 app = Flask(__name__)
 app.config.from_object(AppConfig)
-
+app.register_blueprint(admin_bp)
 # Configuration
 app.config.update(
     # Database configuration
-    SQLALCHEMY_DATABASE_URI='sqlite:///instance/recipes.db',  # Updated path
+    SQLALCHEMY_DATABASE_URI='sqlite:///instance/recipes_images.db',  # Updated path
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
 
     # Security configuration
@@ -64,6 +76,26 @@ app.config.update(
     ADMIN_USERNAME='admin',
     ADMIN_PASSWORD='admin123'
 )
+"""
+# Configure email
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'  # Update this
+app.config['MAIL_PASSWORD'] = 'your-app-password'     # Update this
+mail = Mail(app)
+"""
+# Configure logging
+if not os.path.exists('logs'):
+    os.mkdir('logs')
+file_handler = RotatingFileHandler('logs/Recipe_Master.log', maxBytes=10240, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
+app.logger.info('Recipe Master startup')
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -72,6 +104,8 @@ login_manager.login_view = 'login'
 
 # Initialize extensions
 db.init_app(app)
+
+
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
@@ -84,11 +118,235 @@ login_manager.init_app(app)
 with app.app_context():
     db.create_all()
 
+@main_bp.route('/')
+def index():
+    # Get just basic recipe info without the missing columns
+    featured_recipes = Recipe.query.limit(6).all()
+    recipes = Recipe.query.limit(6).all()
+    categories = Category.query.all()
+    return render_template('main/index.html',
+                           recipes=recipes,
+                           categories=categories,
+                         featured_recipes=featured_recipes)
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_admin:
+            flash('You must be an admin to access this page.', 'danger')
+            return redirect(url_for('home'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Add this simple placeholder instead
+def send_email_notification(subject, recipient, template):
+    # Just print to console instead of sending email
+    print(f"[DEBUG] Would send email to {recipient}")
+    print(f"Subject: {subject}")
+    return True
+
+# User Activity Model
+class UserActivity(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    action = db.Column(db.String(50), nullable=False)
+    details = db.Column(db.String(255))
+    ip_address = db.Column(db.String(45))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<UserActivity {self.action}>'
+
+
+"""
+# Email notification function
+def send_email_notification(subject, recipient, template):
+    try:
+        msg = Message(subject,
+                     sender=app.config['MAIL_USERNAME'],
+                     recipients=[recipient])
+        msg.html = template
+        mail.send(msg)
+        app.logger.info(f'Email sent to {recipient}: {subject}')
+    except Exception as e:
+        app.logger.error(f'Failed to send email: {str(e)}')
+"""
+# Log user activity
+def log_user_activity(user_id, action, details=None):
+    try:
+        activity = UserActivity(
+            user_id=user_id,
+            action=action,
+            details=details,
+            ip_address=request.remote_addr
+        )
+        db.session.add(activity)
+        db.session.commit()
+        app.logger.info(f'Activity logged: User {user_id} - {action}')
+    except Exception as e:
+        app.logger.error(f'Failed to log activity: {str(e)}')
+        db.session.rollback()
+
+
+
+# Additional User Management Routes
+@app.route('/api/user/<int:user_id>/reset-password', methods=['POST'])
+@login_required
+@admin_required
+def admin_reset_password(user_id):
+    try:
+        user = db.session.query(User).get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found'})
+
+        temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+        user.password = generate_password_hash(temp_password)
+
+        # Log activity
+        log_user_activity(
+            current_user.id,
+            'password_reset',
+            f'Reset password for user {user.id}'
+        )
+
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': f'Password reset. Temporary password: {temp_password}'
+        })
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Password reset failed: {str(e)}')
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/user/<int:user_id>/suspend', methods=['POST'])
+@login_required
+@admin_required
+def suspend_user(user_id):
+    try:
+        user = db.session.query(User).get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found'})
+
+        if user.id == current_user.id:
+            return jsonify({'success': False, 'message': 'Cannot suspend yourself'})
+
+        user.is_suspended = not user.is_suspended
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'User {"suspended" if user.is_suspended else "unsuspended"}'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/users/stats', methods=['GET'])
+@login_required
+@admin_required
+def user_stats():
+    try:
+        total_users = db.session.query(User).count()
+        active_users = db.session.query(User).filter_by(is_suspended=False).count()
+        admin_count = db.session.query(User).filter_by(is_admin=True).count()
+
+        recent_users = db.session.query(User) \
+            .order_by(User.created_at.desc()) \
+            .limit(5) \
+            .all()
+
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_users': total_users,
+                'active_users': active_users,
+                'admin_count': admin_count,
+                'recent_users': [{
+                    'id': user.id,
+                    'username': user.username,
+                    'created_at': user.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                } for user in recent_users]
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+# API Routes for User Management
+@app.route('/api/user/<int:user_id>/toggle-admin', methods=['POST'])
+@login_required
+@admin_required
+def toggle_admin(user_id):
+    try:
+        user = db.session.query(User).get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found'})
+
+        # Prevent self-demotion
+        if user.id == current_user.id:
+            return jsonify({
+                'success': False,
+                'message': 'Cannot change your own admin status'
+            })
+
+        user.is_admin = not user.is_admin
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'User {"promoted to" if user.is_admin else "demoted from"} admin'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
+
+# Optional: Add route to get user details
+@app.route('/api/user/<int:user_id>', methods=['GET'])
+@login_required
+@admin_required
+def get_user(user_id):
+    user = db.session.query(User).get(user_id)
+    if not user:
+        return jsonify({'success': False, 'message': 'User not found'})
+
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_admin': user.is_admin,
+            'recipe_count': db.session.query(Recipe).filter_by(user_id=user.id).count(),
+            'comment_count': db.session.query(Comment).filter_by(user_id=user.id).count()
+        }
+    })
+
+
+
+@app.route('/manage-users')
+@login_required
+@admin_required
+def manage_users():
+    users = db.session.query(User).all()
+    return render_template('manage_users.html', users=users)
+
+@app.route('/manage-recipes_images')
+@login_required
+def manage_recipes():
+    # Get all recipes_images for the current user
+    recipes = db.session.query(Recipe).filter_by(user_id=current_user.id).all()
+    return render_template('manage_recipes.html', recipes=recipes)
 
 @login_manager.user_loader
 def load_user(user_id):
     from models import User
     return User.query.get(int(user_id))
+
 
 
 def close_db(e=None):
@@ -202,7 +460,7 @@ def home():
         recent_recipes = Recipe.query.order_by(Recipe.created_at.desc()).limit(6).all()
     except Exception as e:
         recent_recipes = []
-        app.logger.error(f"Error fetching recipes: {e}")
+        app.logger.error(f"Error fetching recipes_images: {e}")
 
     return render_template('home.html', recent_recipes=recent_recipes)
 
@@ -327,7 +585,7 @@ def new_recipe():
 
                 # Insert recipe
                 cursor = db.execute(
-                    '''INSERT INTO recipes 
+                    '''INSERT INTO recipes_images 
                        (name, description, instructions, category, image, user_id, created_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?)''',
                     (name, description, instructions, category, image_filename,
@@ -364,7 +622,7 @@ def view_recipe(id):
     # Get recipe with all details
     recipe = db.execute('''
         SELECT r.*, u.username as author
-        FROM recipes r
+        FROM recipes_images r
         JOIN users u ON r.user_id = u.id
         WHERE r.id = ?
     ''', [id]).fetchone()
@@ -413,7 +671,7 @@ def view_recipe(id):
 @login_required
 def edit_recipe(id):
     recipe = db.execute(
-        'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
+        'SELECT * FROM recipes_images WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
     ).fetchone()
 
@@ -451,7 +709,7 @@ def edit_recipe(id):
 
                 # Update recipe
                 db.execute(
-                    '''UPDATE recipes 
+                    '''UPDATE recipes_images 
                        SET name = ?, description = ?, instructions = ?,
                            category = ?, image = ?, updated_at = ?
                        WHERE id = ?''',
@@ -491,7 +749,7 @@ def edit_recipe(id):
 def delete_recipe(id):
 
     recipe = db.execute(
-        'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
+        'SELECT * FROM recipes_images WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
     ).fetchone()
 
@@ -507,11 +765,11 @@ def delete_recipe(id):
         db.execute('DELETE FROM recipe_ingredients WHERE recipe_id = ?', (id,))
         db.execute('DELETE FROM favorites WHERE recipe_id = ?', (id,))
         db.execute('DELETE FROM comments WHERE recipe_id = ?', (id,))
-        db.execute('DELETE FROM recipes WHERE id = ?', (id,))
+        db.execute('DELETE FROM recipes_images WHERE id = ?', (id,))
         db.commit()
 
         flash('Recipe deleted successfully.')
-        return redirect(url_for('recipes'))
+        return redirect(url_for('recipes_images'))
 
     except sqlite3.Error as e:
         db.rollback()
@@ -523,16 +781,263 @@ def delete_recipe(id):
 @app.route('/shopping-list')
 @login_required
 def shopping_list():
+    # Get categories for filter
+    categories = db.execute('''
+            SELECT DISTINCT category FROM shopping_list 
+            WHERE user_id = ? ORDER BY category
+        ''', (session['user_id'],)).fetchall()
 
-    items = db.execute('''
-        SELECT sl.*, r.name as recipe_name 
-        FROM shopping_list sl
-        LEFT JOIN recipes r ON sl.recipe_id = r.id
-        WHERE sl.user_id = ?
-        ORDER BY sl.category, sl.name
-    ''', (session['user_id'],)).fetchall()
-    return render_template('shopping_list.html', items=items)
+    # Get filter parameters
+    selected_category = request.args.get('category', 'all')
+    sort_by = request.args.get('sort', 'category')  # category, name, or recipe
 
+    # Base query for manual items
+    query = '''
+            SELECT sl.*, r.name as recipe_name 
+            FROM shopping_list sl
+            LEFT JOIN recipes_images r ON sl.recipe_id = r.id
+            WHERE sl.user_id = ?
+        '''
+    params = [session['user_id']]
+
+    # Apply category filter
+    if selected_category != 'all':
+        query += ' AND sl.category = ?'
+        params.append(selected_category)
+
+    # Apply sorting
+    if sort_by == 'name':
+        query += ' ORDER BY sl.name'
+    elif sort_by == 'recipe':
+        query += ' ORDER BY r.name, sl.name'
+    else:  # default: category
+        query += ' ORDER BY sl.category, sl.name'
+
+    items = db.execute(query, params).fetchall()
+
+    # Get recipe ingredients (using SQLAlchemy)
+    saved_recipes = db.session.query(Recipe) \
+        .join(Favorite, Recipe.id == Favorite.recipe_id) \
+        .filter(Favorite.user_id == current_user.id) \
+        .all()
+
+    ingredients = db.session.query(
+        Ingredient.name,
+        RecipeIngredient.amount,
+        RecipeIngredient.unit,
+        Recipe.name.label('recipe_name')
+    ).join(
+        RecipeIngredient, Ingredient.id == RecipeIngredient.ingredient_id
+    ).join(
+        Recipe, RecipeIngredient.recipe_id == Recipe.id
+    ).join(
+        Favorite, Recipe.id == Favorite.recipe_id
+    ).filter(
+        Favorite.user_id == current_user.id
+    ).order_by(Recipe.name, Ingredient.name).all()
+
+    return render_template('shopping_list.html',
+                           items=items,
+                           ingredients=ingredients,
+                           saved_recipes=saved_recipes,
+                           categories=categories,
+                           selected_category=selected_category,
+                           sort_by=sort_by)
+
+# Add/Remove Items
+
+# Add/Remove Items
+@app.route('/api/shopping-list/item', methods=['POST'])
+@login_required
+def add_shopping_item():
+    data = request.json
+    try:
+        db.execute('''
+            INSERT INTO shopping_list (user_id, name, amount, unit, category, recipe_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (
+            session['user_id'],
+            data['name'],
+            data.get('amount'),
+            data.get('unit'),
+            data.get('category', 'General'),
+            data.get('recipe_id')
+        ))
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/shopping-list/item/<int:item_id>', methods=['DELETE'])
+@login_required
+def delete_shopping_item(item_id):
+    try:
+        db.execute('DELETE FROM shopping_list WHERE id = ? AND user_id = ?',
+                  (item_id, session['user_id']))
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+# Add all recipe ingredients to shopping list
+@app.route('/api/shopping-list/add-recipe/<int:recipe_id>', methods=['POST'])
+@login_required
+def add_recipe_to_shopping_list(recipe_id):
+    try:
+        ingredients = db.execute('''
+            SELECT i.name, ri.amount, ri.unit
+            FROM recipe_ingredients ri
+            JOIN ingredients i ON ri.ingredient_id = i.id
+            WHERE ri.recipe_id = ?
+        ''', (recipe_id,)).fetchall()
+
+        for ingredient in ingredients:
+            db.execute('''
+                INSERT INTO shopping_list (user_id, name, amount, unit, category, recipe_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                session['user_id'],
+                ingredient['name'],
+                ingredient['amount'],
+                ingredient['unit'],
+                'From Recipe',
+                recipe_id
+            ))
+
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+# Export/Import and Sharing Routes
+@app.route('/api/shopping-list/export', methods=['GET'])
+@login_required
+def export_shopping_list():
+    try:
+        # Get all items
+        items = db.execute('''
+            SELECT sl.*, r.name as recipe_name 
+            FROM shopping_list sl
+            LEFT JOIN recipes_images r ON sl.recipe_id = r.id
+            WHERE sl.user_id = ?
+            ORDER BY sl.category, sl.name
+        ''', (session['user_id'],)).fetchall()
+
+        # Format for export
+        export_data = {
+            'items': [{
+                'name': item['name'],
+                'amount': item['amount'],
+                'unit': item['unit'],
+                'category': item['category'],
+                'recipe_name': item['recipe_name']
+            } for item in items],
+            'exported_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'user': current_user.username
+        }
+
+        return jsonify(export_data)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/shopping-list/import', methods=['POST'])
+@login_required
+def import_shopping_list():
+    try:
+        data = request.json
+        for item in data['items']:
+            db.execute('''
+                INSERT INTO shopping_list (user_id, name, amount, unit, category)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (
+                session['user_id'],
+                item['name'],
+                item.get('amount'),
+                item.get('unit'),
+                item.get('category', 'General')
+            ))
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/shopping-list/share/<int:user_id>', methods=['POST'])
+@login_required
+def share_shopping_list(user_id):
+    try:
+        # Get items to share
+        items = db.execute('''
+            SELECT * FROM shopping_list
+            WHERE user_id = ? AND id IN ({})
+        '''.format(','.join(['?'] * len(request.json['items']))),
+                           (session['user_id'], *request.json['items'])).fetchall()
+
+        # Copy items to target user's list
+        for item in items:
+            db.execute('''
+                INSERT INTO shopping_list (user_id, name, amount, unit, category, recipe_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (user_id, item['name'], item['amount'], item['unit'],
+                  item['category'], item['recipe_id']))
+
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/shopping-list/item/<int:item_id>/quantity', methods=['PUT'])
+@login_required
+def update_item_quantity(item_id):
+    try:
+        data = request.json
+        db.execute('''
+            UPDATE shopping_list 
+            SET amount = ?, unit = ?
+            WHERE id = ? AND user_id = ?
+        ''', (data['amount'], data['unit'], item_id, session['user_id']))
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+# Get users for sharing
+@app.route('/api/users/search', methods=['GET'])
+@login_required
+def search_users():
+    query = request.args.get('q', '')
+    users = db.execute('''
+        SELECT id, username 
+        FROM users 
+        WHERE username LIKE ? AND id != ?
+        LIMIT 5
+    ''', (f'%{query}%', session['user_id'])).fetchall()
+    return jsonify({'users': users})
+
+
+
+# Clear completed items
+@app.route('/api/shopping-list/clear-completed', methods=['POST'])
+@login_required
+def clear_completed_items():
+    try:
+        completed_items = request.json.get('items', [])
+        if completed_items:
+            placeholders = ','.join(['?'] * len(completed_items))
+            db.execute(f'''
+                DELETE FROM shopping_list 
+                WHERE id IN ({placeholders}) AND user_id = ?
+            ''', (*completed_items, session['user_id']))
+            db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/shopping-list/add', methods=['POST'])
 @login_required
@@ -588,7 +1093,7 @@ def meal_plan():
     meals = db.execute('''
         SELECT mp.*, r.name as recipe_name, r.image as recipe_image
         FROM meal_plan mp
-        LEFT JOIN recipes r ON mp.recipe_id = r.id
+        LEFT JOIN recipes_images r ON mp.recipe_id = r.id
         WHERE mp.user_id = ? AND mp.date >= ?
         ORDER BY mp.date, mp.meal_type
     ''', (session['user_id'], start_date)).fetchall()
@@ -626,12 +1131,12 @@ def add_to_meal_plan():
 def admin_dashboard():
 
     total_users = db.execute('SELECT COUNT(*) as count FROM users').fetchone()['count']
-    total_recipes = db.execute('SELECT COUNT(*) as count FROM recipes').fetchone()['count']
+    total_recipes = db.execute('SELECT COUNT(*) as count FROM recipes_images').fetchone()['count']
     recent_users = db.execute(
         'SELECT * FROM users ORDER BY created_at DESC LIMIT 5'
     ).fetchall()
     recent_recipes = db.execute(
-        'SELECT r.*, u.username FROM recipes r JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC LIMIT 5'
+        'SELECT r.*, u.username FROM recipes_images r JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC LIMIT 5'
     ).fetchall()
 
     return render_template('admin/dashboard.html',
@@ -747,15 +1252,14 @@ def init_db_command():
 # User Management Routes
 @app.route('/users')
 @admin_required
-def manage_users():
-
+def list_users_with_stats():  # Changed function name
     users = db.execute('''
         SELECT u.*, 
                COUNT(DISTINCT r.id) as recipe_count,
                COUNT(DISTINCT f.id) as favorite_count,
                MAX(r.created_at) as last_recipe_date
         FROM users u
-        LEFT JOIN recipes r ON u.id = r.user_id
+        LEFT JOIN recipes_images r ON u.id = r.user_id
         LEFT JOIN favorites f ON u.id = f.user_id
         GROUP BY u.id
         ORDER BY u.username
@@ -855,7 +1359,7 @@ def user_profile(id):
             COUNT(DISTINCT c.id) as comment_count,
             MAX(r.created_at) as last_recipe_date
         FROM users u
-        LEFT JOIN recipes r ON u.id = r.user_id
+        LEFT JOIN recipes_images r ON u.id = r.user_id
         LEFT JOIN favorites f ON u.id = f.user_id
         LEFT JOIN comments c ON u.id = c.user_id
         WHERE u.id = ?
@@ -863,14 +1367,14 @@ def user_profile(id):
 
     # Get user's recent activity
     recent_recipes = db.execute('''
-        SELECT * FROM recipes 
+        SELECT * FROM recipes_images 
         WHERE user_id = ?
         ORDER BY created_at DESC LIMIT 5
     ''', (id,)).fetchall()
 
     recent_favorites = db.execute('''
         SELECT r.*, f.created_at as favorited_at
-        FROM recipes r
+        FROM recipes_images r
         JOIN favorites f ON r.id = f.recipe_id
         WHERE f.user_id = ?
         ORDER BY f.created_at DESC LIMIT 5
@@ -879,7 +1383,7 @@ def user_profile(id):
     recent_comments = db.execute('''
         SELECT c.*, r.name as recipe_name
         FROM comments c
-        JOIN recipes r ON c.recipe_id = r.id
+        JOIN recipes_images r ON c.recipe_id = r.id
         WHERE c.user_id = ?
         ORDER BY c.created_at DESC LIMIT 5
     ''', (id,)).fetchall()
@@ -890,48 +1394,6 @@ def user_profile(id):
                            recent_recipes=recent_recipes,
                            recent_favorites=recent_favorites,
                            recent_comments=recent_comments)
-
-
-@app.route('/user/<int:id>/delete', methods=['POST'])
-@admin_required
-def delete_user(id):
-    if id == session['user_id']:
-        flash('Cannot delete your own account.')
-        return redirect(url_for('manage_users'))
-
-
-    user = db.execute('SELECT * FROM users WHERE id = ?', (id,)).fetchone()
-
-    if user is None:
-        abort(404)
-
-    try:
-        # Delete user's avatar if exists
-        if user['avatar']:
-            delete_image(user['avatar'])
-
-        # Delete user's recipe images
-        recipes = db.execute('SELECT image FROM recipes WHERE user_id = ?', (id,)).fetchall()
-        for recipe in recipes:
-            if recipe['image']:
-                delete_image(recipe['image'])
-
-        # Delete user's data
-        db.execute('DELETE FROM comments WHERE user_id = ?', (id,))
-        db.execute('DELETE FROM favorites WHERE user_id = ?', (id,))
-        db.execute('DELETE FROM shopping_list WHERE user_id = ?', (id,))
-        db.execute('DELETE FROM meal_plan WHERE user_id = ?', (id,))
-        db.execute('DELETE FROM recipes WHERE user_id = ?', (id,))
-        db.execute('DELETE FROM users WHERE id = ?', (id,))
-        db.commit()
-
-        flash('User and all associated data deleted successfully.')
-
-    except sqlite3.Error as e:
-        db.rollback()
-        flash(f'Error deleting user: {e}')
-
-    return redirect(url_for('manage_users'))
 
 
 @app.route('/user/<int:id>/ban', methods=['POST'])
@@ -972,7 +1434,7 @@ def export_users():
                COUNT(DISTINCT r.id) as recipe_count,
                COUNT(DISTINCT f.id) as favorite_count
         FROM users u
-        LEFT JOIN recipes r ON u.id = r.user_id
+        LEFT JOIN recipes_images r ON u.id = r.user_id
         LEFT JOIN favorites f ON u.id = f.user_id
         GROUP BY u.id
     ''').fetchall()
@@ -1009,7 +1471,7 @@ def export_users():
 def edit_recipe_ingredients(id):
 
     recipe = db.execute(
-        'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
+        'SELECT * FROM recipes_images WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
     ).fetchone()
 
@@ -1041,7 +1503,7 @@ def edit_recipe_ingredients(id):
 
         # Update recipe's modified timestamp
         db.execute('''
-            UPDATE recipes 
+            UPDATE recipes_images 
             SET updated_at = ?
             WHERE id = ?
         ''', (datetime.now(), id))
@@ -1059,7 +1521,7 @@ def edit_recipe_ingredients(id):
 def edit_recipe_instructions(id):
 
     recipe = db.execute(
-        'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
+        'SELECT * FROM recipes_images WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
     ).fetchone()
 
@@ -1070,7 +1532,7 @@ def edit_recipe_instructions(id):
         instructions = request.json.get('instructions', [])
 
         db.execute('''
-            UPDATE recipes 
+            UPDATE recipes_images 
             SET instructions = ?,
                 updated_at = ?
             WHERE id = ?
@@ -1088,7 +1550,7 @@ def edit_recipe_instructions(id):
 def edit_recipe_image(id):
 
     recipe = db.execute(
-        'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
+        'SELECT * FROM recipes_images WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
     ).fetchone()
 
@@ -1112,7 +1574,7 @@ def edit_recipe_image(id):
 
         # Update recipe
         db.execute('''
-            UPDATE recipes 
+            UPDATE recipes_images 
             SET image = ?,
                 updated_at = ?
             WHERE id = ?
@@ -1135,7 +1597,7 @@ def edit_recipe_image(id):
 def edit_recipe_metadata(id):
 
     recipe = db.execute(
-        'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
+        'SELECT * FROM recipes_images WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
     ).fetchone()
 
@@ -1145,7 +1607,7 @@ def edit_recipe_metadata(id):
     try:
         data = request.json
         db.execute('''
-            UPDATE recipes 
+            UPDATE recipes_images 
             SET name = ?,
                 description = ?,
                 category = ?,
@@ -1196,7 +1658,7 @@ def recipe_versions(id):
 def restore_recipe_version(id, version_id):
 
     recipe = db.execute(
-        'SELECT * FROM recipes WHERE id = ? AND user_id = ?',
+        'SELECT * FROM recipes_images WHERE id = ? AND user_id = ?',
         (id, session['user_id'])
     ).fetchone()
 
@@ -1237,7 +1699,7 @@ def restore_recipe_version(id, version_id):
 
         # Update recipe
         db.execute('''
-            UPDATE recipes 
+            UPDATE recipes_images 
             SET name = ?,
                 description = ?,
                 instructions = ?,
@@ -1274,7 +1736,7 @@ def restore_recipe_version(id, version_id):
 
 
 # Recipe Search and Filtering
-@app.route('/api/search/recipes', methods=['GET'])
+@app.route('/api/search/recipes_images', methods=['GET'])
 @login_required
 def search_recipes():
     query = request.args.get('q', '')
@@ -1291,7 +1753,7 @@ def search_recipes():
                EXISTS(SELECT 1 FROM favorites 
                      WHERE recipe_id = r.id 
                      AND user_id = ?) as is_favorite
-        FROM recipes r
+        FROM recipes_images r
         JOIN users u ON r.user_id = u.id
         LEFT JOIN favorites f ON r.id = f.recipe_id
         LEFT JOIN comments c ON r.id = c.recipe_id
@@ -1486,7 +1948,7 @@ def manage_collections():
     return jsonify([dict(c) for c in collections])
 
 
-@app.route('/collection/<int:id>/recipes', methods=['POST', 'DELETE'])
+@app.route('/collection/<int:id>/recipes_images', methods=['POST', 'DELETE'])
 @login_required
 def manage_collection_recipes(id):
     recipe_id = request.json.get('recipe_id')
@@ -1551,7 +2013,7 @@ def add_recipe():
 
         db.session.add(recipe)
         db.session.commit()
-        return redirect(url_for('recipes'))
+        return redirect(url_for('recipes_images'))
 
     return render_template('add_recipe.html',
                            available_ingredients=helper.get_available_ingredients(),
@@ -1559,7 +2021,7 @@ def add_recipe():
 
 
 # Recipe Import/Export
-@app.route('/api/recipes/import', methods=['POST'])
+@app.route('/api/recipes_images/import', methods=['POST'])
 @login_required
 def import_recipes():
     if 'file' not in request.files:
@@ -1584,7 +2046,7 @@ def import_recipes():
             try:
                 # Insert recipe
                 cursor = db.execute('''
-                    INSERT INTO recipes (
+                    INSERT INTO recipes_images (
                         name, description, instructions, category,
                         prep_time, cook_time, servings, difficulty,
                         user_id, created_at
@@ -1641,7 +2103,7 @@ def import_recipes():
         else:
             db.execute('ROLLBACK')
             return jsonify({
-                'error': 'No recipes were imported',
+                'error': 'No recipes_images were imported',
                 'details': errors
             }), 400
 
@@ -1651,7 +2113,7 @@ def import_recipes():
         return jsonify({'error': str(e)}), 400
 
 
-@app.route('/api/recipes/export', methods=['POST'])
+@app.route('/api/recipes_images/export', methods=['POST'])
 @login_required
 def export_recipes():
     recipe_ids = request.json.get('recipe_ids', [])
@@ -1664,7 +2126,7 @@ def export_recipes():
         for recipe_id in recipe_ids:
             recipe = db.execute('''
                 SELECT r.*, u.username as author
-                FROM recipes r
+                FROM recipes_images r
                 JOIN users u ON r.user_id = u.id
                 WHERE r.id = ?
             ''', (recipe_id,)).fetchone()
@@ -1719,7 +2181,7 @@ def export_recipes():
             for recipe_id in recipe_ids:
                 recipe = db.execute('''
                     SELECT r.*, u.username as author
-                    FROM recipes r
+                    FROM recipes_images r
                     JOIN users u ON r.user_id = u.id
                     WHERE r.id = ?
                 ''', (recipe_id,)).fetchone()
@@ -1779,7 +2241,7 @@ def export_recipes():
 @login_required
 def recipe_nutrition(id):
 
-    recipe = db.execute('SELECT * FROM recipes WHERE id = ?', (id,)).fetchone()
+    recipe = db.execute('SELECT * FROM recipes_images WHERE id = ?', (id,)).fetchone()
 
     if recipe is None:
         abort(404)
@@ -1830,7 +2292,7 @@ def share_recipe(id):
 
     recipe = db.execute('''
         SELECT r.*, u.username as author
-        FROM recipes r
+        FROM recipes_images r
         JOIN users u ON r.user_id = u.id
         WHERE r.id = ?
     ''', (id,)).fetchone()
@@ -1883,12 +2345,12 @@ def user_analytics(user_id):
                 AVG(rr.rating) as avg_rating_given,
                 (SELECT AVG(rating) 
                  FROM recipe_ratings 
-                 WHERE recipe_id IN (SELECT id FROM recipes WHERE user_id = ?)) as avg_rating_received,
+                 WHERE recipe_id IN (SELECT id FROM recipes_images WHERE user_id = ?)) as avg_rating_received,
                 (SELECT COUNT(DISTINCT user_id) 
                  FROM favorites 
-                 WHERE recipe_id IN (SELECT id FROM recipes WHERE user_id = ?)) as total_followers
+                 WHERE recipe_id IN (SELECT id FROM recipes_images WHERE user_id = ?)) as total_followers
             FROM users u
-            LEFT JOIN recipes r ON u.id = r.user_id
+            LEFT JOIN recipes_images r ON u.id = r.user_id
             LEFT JOIN favorites f ON u.id = f.user_id
             LEFT JOIN comments c ON u.id = c.user_id
             LEFT JOIN recipe_ratings rr ON u.id = rr.user_id
@@ -1905,7 +2367,7 @@ def user_analytics(user_id):
                 COUNT(CASE WHEN type = 'comment' THEN 1 END) as comments_made,
                 COUNT(CASE WHEN type = 'rating' THEN 1 END) as ratings_given
             FROM (
-                SELECT id, 'recipe' as type, created_at FROM recipes WHERE user_id = ?
+                SELECT id, 'recipe' as type, created_at FROM recipes_images WHERE user_id = ?
                 UNION ALL
                 SELECT id, 'favorite' as type, created_at FROM favorites WHERE user_id = ?
                 UNION ALL
@@ -1918,7 +2380,7 @@ def user_analytics(user_id):
             LIMIT 30
         ''', (user_id, user_id, user_id, user_id)).fetchall()
 
-        # Popular recipes
+        # Popular recipes_images
         popular_recipes = db.execute('''
             SELECT 
                 r.*,
@@ -1926,7 +2388,7 @@ def user_analytics(user_id):
                 COUNT(DISTINCT c.id) as comment_count,
                 AVG(rr.rating) as avg_rating,
                 COUNT(DISTINCT rr.id) as rating_count
-            FROM recipes r
+            FROM recipes_images r
             LEFT JOIN favorites f ON r.id = f.recipe_id
             LEFT JOIN comments c ON r.id = c.recipe_id
             LEFT JOIN recipe_ratings rr ON r.id = rr.recipe_id
@@ -1962,7 +2424,7 @@ def get_recommendations():
                    COUNT(DISTINCT f2.user_id) as similar_users,
                    COUNT(DISTINCT c.id) as comment_count,
                    AVG(rr.rating) as avg_rating
-            FROM recipes r
+            FROM recipes_images r
             JOIN favorites f1 ON f1.recipe_id IN (
                 SELECT recipe_id 
                 FROM favorites 
@@ -1987,7 +2449,7 @@ def get_recommendations():
                    COUNT(DISTINCT f.id) as favorite_count,
                    COUNT(DISTINCT c.id) as comment_count,
                    AVG(rr.rating) as avg_rating
-            FROM recipes r
+            FROM recipes_images r
             JOIN recipe_views rv ON r.id = rv.recipe_id
             LEFT JOIN favorites f ON r.id = f.recipe_id
             LEFT JOIN comments c ON r.id = c.recipe_id
@@ -2004,7 +2466,7 @@ def get_recommendations():
                    COUNT(DISTINCT f.id) as favorite_count,
                    COUNT(DISTINCT c.id) as comment_count,
                    AVG(rr.rating) as avg_rating
-            FROM recipes r
+            FROM recipes_images r
             JOIN recipe_ingredients ri1 ON r.id = ri1.recipe_id
             JOIN recipe_ingredients ri2 ON ri1.name = ri2.name
             JOIN cooking_history ch ON ri2.recipe_id = ch.recipe_id
@@ -2036,7 +2498,7 @@ def cleanup_command():
     try:
         # Find unused images
         used_images = set()
-        for table in ['recipes', 'users']:
+        for table in ['recipes_images', 'users']:
             images = db.execute(f'SELECT image FROM {table} WHERE image IS NOT NULL').fetchall()
             used_images.update(img['image'] for img in images)
 
@@ -2052,11 +2514,11 @@ def cleanup_command():
         db.execute('DELETE FROM sessions WHERE expires < ?', (datetime.now(),))
 
         # Remove orphaned records
-        db.execute('DELETE FROM recipe_ingredients WHERE recipe_id NOT IN (SELECT id FROM recipes)')
-        db.execute('DELETE FROM recipe_tags WHERE recipe_id NOT IN (SELECT id FROM recipes)')
-        db.execute('DELETE FROM favorites WHERE recipe_id NOT IN (SELECT id FROM recipes)')
-        db.execute('DELETE FROM comments WHERE recipe_id NOT IN (SELECT id FROM recipes)')
-        db.execute('DELETE FROM recipe_ratings WHERE recipe_id NOT IN (SELECT id FROM recipes)')
+        db.execute('DELETE FROM recipe_ingredients WHERE recipe_id NOT IN (SELECT id FROM recipes_images)')
+        db.execute('DELETE FROM recipe_tags WHERE recipe_id NOT IN (SELECT id FROM recipes_images)')
+        db.execute('DELETE FROM favorites WHERE recipe_id NOT IN (SELECT id FROM recipes_images)')
+        db.execute('DELETE FROM comments WHERE recipe_id NOT IN (SELECT id FROM recipes_images)')
+        db.execute('DELETE FROM recipe_ratings WHERE recipe_id NOT IN (SELECT id FROM recipes_images)')
 
         db.commit()
         click.echo(f'Cleanup completed: Removed {removed} unused images')
@@ -2068,7 +2530,7 @@ def cleanup_command():
 
 # Background Tasks
 def update_search_index():
-    """Update the search index for recipes."""
+    """Update the search index for recipes_images."""
 
     try:
         db.execute('BEGIN TRANSACTION')
@@ -2076,12 +2538,12 @@ def update_search_index():
         # Clear existing index
         db.execute('DELETE FROM recipe_search_index')
 
-        # Index all recipes
+        # Index all recipes_images
         recipes = db.execute('''
             SELECT r.id, r.name, r.description, r.instructions,
                    GROUP_CONCAT(ri.name) as ingredients,
                    GROUP_CONCAT(rt.tag) as tags
-            FROM recipes r
+            FROM recipes_images r
             LEFT JOIN recipe_ingredients ri ON r.id = ri.recipe_id
             LEFT JOIN recipe_tags rt ON r.id = rt.recipe_id
             GROUP BY r.id
@@ -2179,7 +2641,7 @@ def messages():
     return render_template('messages.html')
 
 
-@app.route('/recipes')
+@app.route('/recipes_images')
 @login_required
 def recipes():
     search = request.args.get('search', '')
@@ -2226,14 +2688,14 @@ def recipes():
     } for row in recipes_data]
 
     return render_template(
-        'recipes.html',
+        'recipes_images.html',
         recipes=recipes,
         search=search,
         category=category
     )
 
 # API endpoint if needed
-@app.route('/recipes')
+@app.route('/recipes_images')
 @login_required
 def list_recipes():
     search = request.args.get('search', '')
@@ -2270,7 +2732,7 @@ def list_recipes():
         .all()
 
     return render_template(
-        'recipes.html',
+        'recipes_images.html',
         recipes=recipes,
         search=search,
         category=category
