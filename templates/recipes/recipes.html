@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Recipes</h2>
+        <div class="btn-group">
+            <a href="{{ url_for('main.add_recipe') }}" class="btn btn-primary">
+                Add Recipe
+            </a>
+            <button type="button" class="btn btn-secondary dropdown-toggle" 
+                    data-toggle="dropdown">
+                Import/Export
+            </button>
+            <div class="dropdown-menu dropdown-menu-right">
+                <a class="dropdown-item" href="{{ url_for('main.export_recipes', format_type='json') }}">
+                    Export as JSON
+                </a>
+                <a class="dropdown-item" href="{{ url_for('main.export_recipes', format_type='csv') }}">
+                    Export as CSV
+                </a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#" data-toggle="modal" 
+                   data-target="#importModal">Import Recipes</a>
+            </div>
+        </div>
+    </div>
+    
+    {% if recipes %}
+    <div class="row">
+        {% for recipe in recipes %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                {% if recipe.image %}
+                <img src="{{ url_for('static', filename='uploads/' + recipe.image) }}" class="card-img-top" alt="{{ recipe.name }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ recipe.name }}</h5>
+                    <p class="card-text">{{ recipe.description[:100] }}...</p>
+                    <p class="card-text"><small class="text-muted">Category: {{ recipe.category.name if recipe.category else 'Uncategorized' }}</small></p>
+                    <a href="{{ url_for('main.view_recipe', recipe_id=recipe.id) }}" class="btn btn-primary">View Recipe</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No recipes found. Be the first to add a recipe!
+    </div>
+    {% endif %}
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Recipes</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm">
+                    <div class="form-group">
+                        <label for="importFile">Choose File</label>
+                        <input type="file" class="form-control-file" id="importFile" 
+                               accept=".json,.csv" required>
+                        <small class="form-text text-muted">
+                            Supported formats: JSON, CSV
+                        </small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="importButton">
+                    Import
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.getElementById('importButton').addEventListener('click', function() {
+    const fileInput = document.getElementById('importFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a file to import');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    fetch('{{ url_for("main.import_recipes") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error importing recipes: ' + error);
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

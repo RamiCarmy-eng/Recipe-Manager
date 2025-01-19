@@ -1,7 +1,10 @@
 import json
 import os
 import sqlite3
-
+import time
+from wsgi import app, db
+from models.models import User, Recipe, Ingredient
+from werkzeug.security import generate_password_hash
 
 def init_db():
     # Create instance directory if it doesn't exist
@@ -11,140 +14,112 @@ def init_db():
     # Database path
     DB_PATH = 'instance/recipes.db'
 
-    # Remove old database if it exists
-    if os.path.exists(DB_PATH):
-        os.remove(DB_PATH)
-        print("Removed old database")
+    # Try to remove the old database
+    max_attempts = 5
+    attempt = 0
+    while attempt < max_attempts:
+        try:
+            if os.path.exists(DB_PATH):
+                os.remove(DB_PATH)
+                print("Removed old database")
+                break
+        except PermissionError:
+            attempt += 1
+            print(f"Database is locked. Attempt {attempt} of {max_attempts}...")
+            time.sleep(1)  # Wait for 1 second before trying again
+            
+            # On the last attempt, try to close all connections
+            if attempt == max_attempts - 1:
+                try:
+                    with app.app_context():
+                        db.session.remove()
+                        db.engine.dispose()
+                except:
+                    pass
 
-    # Create new database
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    if attempt == max_attempts:
+        print("Could not remove the old database. Please close any applications using it and try again.")
+        return
 
-    try:
-        # Create tables with updated users table
-        cursor.execute('''
-        CREATE TABLE users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            role TEXT NOT NULL DEFAULT 'user',
-            email TEXT,
-            avatar TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP
-        )
-        ''')
+    with app.app_context():
+        # Create all tables using SQLAlchemy
+        db.create_all()
 
-        # Create recipes_images table with image field
-        cursor.execute('''
-        CREATE TABLE recipes_images (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            name TEXT NOT NULL,
-            category TEXT NOT NULL,
-            description TEXT,
-            prep_time INTEGER,
-            servings INTEGER,
-            instructions TEXT,
-            image TEXT
-        )
-        ''')
+        try:
+            # Add admin user
+            admin_user = User(
+                username='admin',
+                password=generate_password_hash('admin123'),
+                role='admin'
+            )
+            db.session.add(admin_user)
+            db.session.commit()
 
-        # Create ingredients table
-        cursor.execute('''
-        CREATE TABLE ingredients (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            recipe_id INTEGER NOT NULL,
-            name TEXT NOT NULL,
-            amount REAL,
-            unit TEXT,
-            description TEXT,
-            category TEXT
-        )
-        ''')
+            # Load and process recipes from JSON
+            with open('recipes.json', 'r', encoding='utf-8') as file:
+                recipes_data = json.load(file)
 
-        # Add admin user
-        cursor.execute('''
-        INSERT INTO users (username, password, role) 
-        VALUES ('admin', 'admin123', 'admin')
-        ''')
+            total_ingredients = 0
 
-        # Load and process recipes_images from JSON
-        with open('recipes.json', 'r', encoding='utf-8') as file:
-            recipes = json.load(file)
+            for recipe_data in recipes_data:
+                # Create recipe
+                recipe = Recipe(
+                    user_id=admin_user.id,
+                    name=recipe_data['name'],
+                    category=recipe_data.get('category', 'Other'),
+                    subcategory=recipe_data.get('subcategory', ''),
+                    description=recipe_data.get('description', ''),
+                    prep_time=0,
+                    servings=4,
+                    instructions='\n'.join(recipe_data.get('instructions', [])) if 'instructions' in recipe_data else '',
+                    image=recipe_data.get('image_path', '')
+                )
+                db.session.add(recipe)
+                db.session.flush()
 
-        total_ingredients = 0
+                # Add ingredients
+                for ing_data in recipe_data.get('ingredients', []):
+                    ingredient_name = ing_data.get('ingredient', ing_data.get('name', ''))
+                    if ingredient_name:
+                        ingredient = Ingredient(
+                            recipe_id=recipe.id,
+                            name=ingredient_name,
+                            amount=ing_data.get('quantity', 0),
+                            unit=ing_data.get('unit', ''),
+                            description=ing_data.get('description', ''),
+                            category=ing_data.get('category', 'Other')
+                        )
+                        db.session.add(ingredient)
+                        total_ingredients += 1
 
-        for recipe in recipes:
-            # Insert recipe
-            cursor.execute('''
-                INSERT INTO recipes_images (
-                    user_id,
-                    name,
-                    category,
-                    description,
-                    prep_time,
-                    servings,
-                    instructions,
-                    image
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                1,  # Default user_id
-                recipe['name'],
-                recipe.get('category', 'Other'),
-                recipe.get('description', ''),
-                0,  # Default prep_time
-                4,  # Default servings
-                '\n'.join(recipe.get('instructions', [])) if 'instructions' in recipe else '',
-                recipe.get('image_path', '')
-            ))
+            # Commit all changes
+            db.session.commit()
 
-            recipe_id = cursor.lastrowid
+            # Verify data
+            recipe_count = Recipe.query.count()
+            ingredient_count = Ingredient.query.count()
 
-            # Insert ingredients
-            for ingredient in recipe.get('ingredients', []):
-                # Handle both name formats in your JSON
-                ingredient_name = ingredient.get('ingredient', ingredient.get('name', ''))
-                if ingredient_name:  # Only insert if we have a name
-                    cursor.execute('''
-                        INSERT INTO ingredients (
-                            recipe_id,
-                            name,
-                            amount,
-                            unit,
-                            description,
-                            category
-                        ) VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (
-                        recipe_id,
-                        ingredient_name,
-                        ingredient.get('quantity', 0),
-                        ingredient.get('unit', ''),
-                        ingredient.get('description', ''),
-                        ingredient.get('category', 'Other')
-                    ))
-                    total_ingredients += 1
+            print(f"\nDatabase created with:")
+            print(f"- {recipe_count} recipes")
+            print(f"- {ingredient_count} ingredients")
 
-        # Commit all changes
-        conn.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error: {str(e)}")
+            raise
+        finally:
+            db.session.close()
+            db.engine.dispose()
 
-        # Verify data
-        cursor.execute("SELECT COUNT(*) FROM recipes_images")
-        recipe_count = cursor.fetchone()[0]
-
-        print(f"\nDatabase created with:")
-        print(f"- {recipe_count} recipes_images")
-        print(f"- {total_ingredients} ingredients")
-
-    except Exception as e:
-        conn.rollback()
-        print(f"Error: {str(e)}")
-        raise
-
-    finally:
-        conn.close()
         print(f"Database created at: {os.path.abspath(DB_PATH)}")
 
-
 if __name__ == '__main__':
+    try:
+        # Try to close any existing connections
+        with app.app_context():
+            db.session.remove()
+            db.engine.dispose()
+    except:
+        pass
+    
     init_db()

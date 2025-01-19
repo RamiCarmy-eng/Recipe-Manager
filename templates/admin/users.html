@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Users</h2>
+    
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    <span class="badge badge-{{ 'success' if user.is_active else 'danger' }}">
+                        {{ 'Active' if user.is_active else 'Inactive' }}
+                    </span>
+                    {% if user.is_admin %}
+                    <span class="badge badge-info">Admin</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-{{ 'warning' if user.is_active else 'success' }} toggle-status"
+                                data-user-id="{{ user.id }}"
+                                data-current-status="{{ user.is_active }}">
+                            {{ 'Deactivate' if user.is_active else 'Activate' }}
+                        </button>
+                        <button class="btn btn-sm btn-{{ 'secondary' if user.is_admin else 'info' }} toggle-admin"
+                                data-user-id="{{ user.id }}"
+                                data-current-status="{{ user.is_admin }}">
+                            {{ 'Remove Admin' if user.is_admin else 'Make Admin' }}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.querySelectorAll('.toggle-status').forEach(button => {
+    button.addEventListener('click', function() {
+        const userId = this.dataset.userId;
+        const currentStatus = this.dataset.currentStatus === 'True';
+        const newStatus = !currentStatus;
+        
+        fetch(`/admin/user/${userId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ is_active: newStatus })
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            }
+        });
+    });
+});
+
+document.querySelectorAll('.toggle-admin').forEach(button => {
+    button.addEventListener('click', function() {
+        const userId = this.dataset.userId;
+        const currentStatus = this.dataset.currentStatus === 'True';
+        const newStatus = !currentStatus;
+        
+        fetch(`/admin/user/${userId}/toggle-admin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ is_admin: newStatus })
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

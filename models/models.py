@@ -9,10 +9,13 @@ class Comment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes_images.id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Comment {self.id}>'
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -28,36 +31,35 @@ class User(UserMixin, db.Model):
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     last_login = db.Column(db.DateTime)
-
-    recipes = db.relationship('Recipe', backref='user', lazy=True)
-    favorites = db.relationship('Favorite', backref='user', lazy=True)
+    recipes = db.relationship('Recipe', back_populates='user', lazy=True)
     comments = db.relationship('Comment', backref='user', lazy=True)
+    favorites = db.relationship('Favorite', backref='user', lazy=True)
     shopping_lists = db.relationship('ShoppingList', backref='user', lazy=True)
     activities = db.relationship('UserActivity', backref='user', lazy=True)
 
 class Recipe(db.Model):
-    __tablename__ = 'recipes_images'
+    __tablename__ = 'recipes'
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.Text)
-    prep_time = db.Column(db.Integer)
-    servings = db.Column(db.Integer)
-    instructions = db.Column(db.Text)
-    image = db.Column(db.String(200))
-    is_reported = db.Column(db.Boolean, default=False)
-    is_approved = db.Column(db.Boolean, default=False)
-    is_hidden = db.Column(db.Boolean, default=False)
-    is_featured = db.Column(db.Boolean, default=False)
-    rejection_reason = db.Column(db.Text)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    instructions = db.Column(db.Text, nullable=False)
+    prep_time = db.Column(db.Integer, nullable=False)
+    cook_time = db.Column(db.Integer, nullable=False)
+    servings = db.Column(db.Integer, nullable=False)
+    difficulty = db.Column(db.String(20), nullable=False)
+    image = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
 
-    ingredients = db.relationship('RecipeIngredient', backref='recipe', lazy=True)
-    comments = db.relationship('Comment', backref='recipe', lazy=True)
+    user = db.relationship('User', back_populates='recipes')
+    category = db.relationship('Category', backref='recipes', lazy=True)
+    ingredients = db.relationship('Ingredient', backref='recipe', lazy=True, cascade='all, delete-orphan')
+
 
 class Category(db.Model):
     __tablename__ = 'categories'
@@ -72,12 +74,15 @@ class Ingredient(db.Model):
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes_images.id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Float)
     unit = db.Column(db.String(50))
     description = db.Column(db.Text)
-    category = db.Column(db.String(50))
+    category = db.Column(db.String(100))
+
+    def __repr__(self):
+        return f'<Ingredient {self.name}>'
 
 
 class Favorite(db.Model):
@@ -86,7 +91,7 @@ class Favorite(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes_images.id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=False)  # Changed from recipes_images
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -203,7 +208,7 @@ class RecipeIngredient(db.Model):
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes_images.id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=False)  # Changed from recipes_images
     ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredients.id'), nullable=False)
     amount = db.Column(db.Float)
     unit = db.Column(db.String(20))

@@ -1,4 +1,6 @@
 import sqlite3
+from wsgi import app, db
+from models.models import User, Recipe, Ingredient
 
 """def check_db():
     conn = sqlite3.connect('instance/recipes_images.db')
@@ -74,7 +76,37 @@ def test_database():
         db.close()
 
 
+def check_database():
+    with app.app_context():
+        try:
+            # Check users
+            users = User.query.all()
+            print("\nUsers in database:")
+            for user in users:
+                print(f"- {user.username} (role: {user.role})")
+
+            # Check recipes
+            recipes = Recipe.query.all()
+            print("\nRecipes in database:")
+            for recipe in recipes:
+                print(f"\nRecipe: {recipe.name}")
+                print(f"Category: {recipe.category}")
+                print(f"Subcategory: {recipe.subcategory}")
+                print("Ingredients:")
+                for ingredient in recipe.ingredients:
+                    print(f"- {ingredient.name}: {ingredient.amount} {ingredient.unit}")
+
+            print(f"\nTotal counts:")
+            print(f"- Users: {len(users)}")
+            print(f"- Recipes: {len(recipes)}")
+            print(f"- Ingredients: {sum(len(recipe.ingredients) for recipe in recipes)}")
+
+        except Exception as e:
+            print(f"Error checking database: {str(e)}")
+
+
 if __name__ == '__main__':
     # check_db()
 
     test_database()
+    check_database()

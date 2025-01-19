@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Shopping Lists</h2>
+    
+    <div class="row mb-4">
+        <div class="col">
+            <a href="{{ url_for('shopping.create_shopping_list') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create New List
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% for list in shopping_lists %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ list.name }}</h5>
+                    <p class="card-text">
+                        Created: {{ list.created_at.strftime('%Y-%m-%d') }}
+                        <br>
+                        {{ list.items|length }} items
+                    </p>
+                    <div class="btn-group">
+                        <a href="{{ url_for('shopping.view_shopping_list', list_id=list.id) }}" 
+                           class="btn btn-primary">View List</a>
+                        <button class="btn btn-danger delete-list" 
+                                data-list-id="{{ list.id }}">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.delete-list').forEach(button => {
+    button.addEventListener('click', function() {
+        const listId = this.dataset.listId;
+        if (confirm('Delete this shopping list?')) {
+            fetch(`/shopping/list/${listId}/delete`, {
+                method: 'POST'
+            }).then(response => {
+                if (response.ok) {
+                    this.closest('.col-md-4').remove();
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %} 

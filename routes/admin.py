@@ -1,6 +1,6 @@
 from flask import (
     Blueprint, jsonify, redirect, url_for, flash, 
-    session, current_app, render_template
+    session, current_app, render_template, request
 )
 from flask_login import login_required, current_user
 from models import User, Recipe, Comment, Favorite
@@ -30,19 +30,19 @@ def dashboard():
     recipes = Recipe.query.all()
     return render_template('admin/dashboard.html', users=users, recipes=recipes)
 
-@admin_bp.route('/users')
+@admin_bp.route('/admin/users')
 @login_required
 @admin_required
-def users():
-    users = User.query.all()
+def manage_users():
+    users = User.query.order_by(User.username).all()
     return render_template('admin/users.html', users=users)
 
-@admin_bp.route('/recipes_images')
+@admin_bp.route('/admin/recipes')
 @login_required
 @admin_required
-def recipes():
+def manage_recipes():
     recipes = Recipe.query.all()
-    return render_template('admin/recipes_images.html', recipes=recipes)
+    return render_template('admin/recipes.html', recipes=recipes)
 
 @admin_bp.route('/user/<int:user_id>/toggle-active', methods=['POST'])
 @login_required
@@ -52,7 +52,7 @@ def toggle_user_active(user_id):
     user.is_active = not user.is_active
     db.session.commit()
     flash(f'User {user.username} {"activated" if user.is_active else "deactivated"}', 'success')
-    return redirect(url_for('admin.users'))
+    return redirect(url_for('admin.manage_users'))
 
 @admin_bp.route('/recipe/<int:recipe_id>/toggle-featured', methods=['POST'])
 @login_required
@@ -62,7 +62,7 @@ def toggle_recipe_featured(recipe_id):
     recipe.is_featured = not recipe.is_featured
     db.session.commit()
     flash(f'Recipe {recipe.name} {"featured" if recipe.is_featured else "unfeatured"}', 'success')
-    return redirect(url_for('admin.recipes_images'))
+    return redirect(url_for('admin.manage_recipes'))
 
 @admin_bp.route('/recipe/<int:recipe_id>/toggle-hidden', methods=['POST'])
 @login_required
@@ -72,7 +72,7 @@ def toggle_recipe_hidden(recipe_id):
     recipe.is_hidden = not recipe.is_hidden
     db.session.commit()
     flash(f'Recipe {recipe.name} {"hidden" if recipe.is_hidden else "unhidden"}', 'success')
-    return redirect(url_for('admin.recipes_images'))
+    return redirect(url_for('admin.manage_recipes'))
 
 # API route for AJAX calls
 @admin_bp.route('/api/user/<int:user_id>', methods=['DELETE'])
@@ -148,4 +148,36 @@ def web_delete_user(id):
         db.session.rollback()
         flash(f'Error deleting user: {e}')
 
-    return redirect(url_for('admin.manage_users')) 
+    return redirect(url_for('admin.manage_users'))
+
+@admin_bp.route('/admin/user/<int:user_id>/toggle-status', methods=['POST'])
+@login_required
+@admin_required
+def toggle_user_status(user_id):
+    user = User.query.get_or_404(user_id)
+    
+    # Prevent self-deactivation
+    if user.id == current_user.id:
+        return jsonify({'error': 'Cannot deactivate your own account'}), 400
+        
+    data = request.get_json()
+    user.is_active = data.get('is_active', False)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@admin_bp.route('/admin/user/<int:user_id>/toggle-admin', methods=['POST'])
+@login_required
+@admin_required
+def toggle_user_admin(user_id):
+    user = User.query.get_or_404(user_id)
+    
+    # Prevent self-admin-removal
+    if user.id == current_user.id:
+        return jsonify({'error': 'Cannot remove your own admin status'}), 400
+        
+    data = request.get_json()
+    user.is_admin = data.get('is_admin', False)
+    db.session.commit()
+    
+    return jsonify({'success': True}) 

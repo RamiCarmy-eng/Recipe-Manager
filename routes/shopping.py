@@ -1,12 +1,14 @@
 from datetime import datetime
-from flask import Blueprint, jsonify, request, render_template, current_app, send_file, make_response
+from flask import Blueprint, jsonify, request, render_template, current_app, send_file, make_response, redirect, url_for, flash
 from flask_login import login_required, current_user
 from sqlalchemy import func
 from extensions import db
 from models.models import (
     ShoppingListTemplate, TemplateItem, CollaborativeList,
-    CollaborativeListMember, CollaborativeListItem, Recipe, Ingredient
+    CollaborativeListMember, CollaborativeListItem, Recipe, Ingredient,
+    ShoppingList, ShoppingListItem, IngredientCategory
 )
+from forms.shopping import ShoppingListForm
 import csv
 import io
 import json
@@ -31,30 +33,72 @@ def shopping_lists():
         collab_lists=collab_lists
     )
 
-@shopping_bp.route('/shopping-list/<int:list_id>')
+@shopping_bp.route('/shopping/list/<int:list_id>')
 @login_required
-def view_list(list_id):
-    collab_list = CollaborativeList.query.get_or_404(list_id)
-    member = CollaborativeListMember.query.filter_by(
-        list_id=list_id, 
-        user_id=current_user.id
-    ).first()
+def view_shopping_list(list_id):
+    shopping_list = ShoppingList.query.get_or_404(list_id)
+    if shopping_list.user_id != current_user.id:
+        flash('You do not have permission to view this list.', 'danger')
+        return redirect(url_for('shopping.list_shopping_lists'))
     
-    if not member and collab_list.owner_id != current_user.id:
-        return jsonify({'error': 'Not authorized'}), 403
+    # Get all items organized by category
+    categorized_items = {}
     
-    items = CollaborativeListItem.query.filter_by(list_id=list_id).all()
-    categories = db.session.query(
-        func.distinct(CollaborativeListItem.category)
-    ).filter_by(list_id=list_id).all()
+    # Query items with ingredient and category information
+    items = (db.session.query(ShoppingListItem, Ingredient, IngredientCategory)
+             .join(Ingredient)
+             .join(IngredientCategory)
+             .filter(ShoppingListItem.shopping_list_id == list_id)
+             .order_by(IngredientCategory.name, Ingredient.name)
+             .all())
     
-    return render_template(
-        'shopping/view_list.html',
-        list=collab_list,
-        items=items,
-        categories=categories,
-        can_edit=member.can_edit if member else True
-    )
+    # Organize items by category
+    for item, ingredient, category in items:
+        if category.name not in categorized_items:
+            categorized_items[category.name] = []
+        
+        categorized_items[category.name].append({
+            'id': item.id,
+            'name': ingredient.name,
+            'quantity': item.quantity,
+            'unit': item.unit,
+            'checked': item.checked
+        })
+    
+    return render_template('shopping/view_list.html',
+                         shopping_list=shopping_list,
+                         categorized_items=categorized_items)
+
+@shopping_bp.route('/shopping/list/create', methods=['GET', 'POST'])
+@login_required
+def create_shopping_list():
+    form = ShoppingListForm()
+    recipes = Recipe.query.filter_by(user_id=current_user.id).all()
+    form.recipes.choices = [(r.id, r.title) for r in recipes]
+    
+    if form.validate_on_submit():
+        shopping_list = ShoppingList(
+            name=form.name.data,
+            user_id=current_user.id,
+            created_at=datetime.utcnow()
+        )
+        
+        # Add selected recipes
+        for recipe_id in form.recipes.data:
+            recipe = Recipe.query.get(recipe_id)
+            if recipe and recipe.user_id == current_user.id:
+                shopping_list.recipes.append(recipe)
+        
+        db.session.add(shopping_list)
+        db.session.commit()
+        
+        flash('Shopping list created successfully!', 'success')
+        return redirect(url_for('shopping.view_shopping_list', 
+                              list_id=shopping_list.id))
+    
+    return render_template('shopping/create_list.html', 
+                         form=form, 
+                         recipes=recipes)
 
 # Template Management
 @shopping_bp.route('/api/templates/<int:template_id>/apply', methods=['POST'])
@@ -397,3 +441,52 @@ def import_template():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
+
+@shopping_bp.route('/shopping/list/<int:list_id>/filter')
+@login_required
+def filter_shopping_list(list_id):
+    shopping_list = ShoppingList.query.get_or_404(list_id)
+    category_id = request.args.get('category_id')
+    sort_by = request.args.get('sort_by', 'category')  # category, name, or checked
+    
+    # Base query
+    query = (db.session.query(ShoppingListItem, Ingredient, IngredientCategory)
+             .join(Ingredient)
+             .join(IngredientCategory)
+             .filter(ShoppingListItem.shopping_list_id == list_id))
+    
+    # Apply category filter
+    if category_id:
+        query = query.filter(IngredientCategory.id == category_id)
+    
+    # Apply sorting
+    if sort_by == 'name':
+        query = query.order_by(Ingredient.name)
+    elif sort_by == 'checked':
+        query = query.order_by(ShoppingListItem.checked, IngredientCategory.name, Ingredient.name)
+    else:  # default: category
+        query = query.order_by(IngredientCategory.name, Ingredient.name)
+    
+    items = query.all()
+    
+    # Organize items by category
+    categorized_items = {}
+    for item, ingredient, category in items:
+        if category.name not in categorized_items:
+            categorized_items[category.name] = []
+        
+        categorized_items[category.name].append({
+            'id': item.id,
+            'name': ingredient.name,
+            'quantity': item.quantity,
+            'unit': item.unit,
+            'checked': item.checked
+        })
+    
+    return jsonify(categorized_items)
+
+@shopping_bp.route('/shopping/lists')
+@login_required
+def list_shopping_lists():
+    shopping_lists = ShoppingList.query.filter_by(user_id=current_user.id).all()
+    return render_template('shopping/lists.html', shopping_lists=shopping_lists)

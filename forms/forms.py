@@ -28,3 +28,7 @@ class EditRecipeForm(RecipeForm):
     def __init__(self, *args, **kwargs):
         super(EditRecipeForm, self).__init__(*args, **kwargs)
         self.original_title = kwargs.get('obj', None) and kwargs['obj'].title
+
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])

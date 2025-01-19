@@ -23,3 +23,9 @@ __all__ = [
     'comment_bp',
     'template_bp'
 ]
+
+from flask import Blueprint
+
+main_bp = Blueprint('main', __name__)
+
+from . import main  # This imports the routes

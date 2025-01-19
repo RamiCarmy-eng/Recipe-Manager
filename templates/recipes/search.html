@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Search Recipes</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <form id="searchForm" class="form-inline">
+                <input type="text" name="q" class="form-control mr-2" 
+                       placeholder="Search recipes..." value="{{ query }}">
+                       
+                <select name="category" class="form-control mr-2">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" 
+                            {{ 'selected' if category_id|int == category.id }}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <select name="difficulty" class="form-control mr-2">
+                    <option value="">All Difficulties</option>
+                    {% for value, label in difficulties %}
+                    <option value="{{ value }}" 
+                            {{ 'selected' if difficulty == value }}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row" id="searchResults">
+        {% for recipe in recipes %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                {% if recipe.image %}
+                <img src="{{ url_for('static', filename='uploads/images/' + recipe.image) }}"
+                     class="card-img-top" alt="{{ recipe.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ recipe.title }}</h5>
+                    <p class="card-text">{{ recipe.description[:100] }}...</p>
+                    <div class="recipe-meta mb-2">
+                        <span class="badge badge-primary">{{ recipe.category.name }}</span>
+                        <span class="badge badge-info">{{ recipe.difficulty }}</span>
+                    </div>
+                    <a href="{{ url_for('main.view_recipe', recipe_id=recipe.id) }}" 
+                       class="btn btn-primary">View Recipe</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+const form = document.getElementById('searchForm');
+const resultsContainer = document.getElementById('searchResults');
+
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    
+    fetch(`/recipes/search?${params.toString()}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(recipes => {
+        resultsContainer.innerHTML = recipes.map(recipe => `
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    ${recipe.image ? `
+                        <img src="/static/uploads/images/${recipe.image}"
+                             class="card-img-top" alt="${recipe.title}">
+                    ` : ''}
+                    <div class="card-body">
+                        <h5 class="card-title">${recipe.title}</h5>
+                        <p class="card-text">${recipe.description.slice(0, 100)}...</p>
+                        <div class="recipe-meta mb-2">
+                            <span class="badge badge-primary">${recipe.category}</span>
+                            <span class="badge badge-info">${recipe.difficulty}</span>
+                        </div>
+                        <a href="/recipe/${recipe.id}" class="btn btn-primary">
+                            View Recipe
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    });
+});
+</script>
+{% endblock %} 

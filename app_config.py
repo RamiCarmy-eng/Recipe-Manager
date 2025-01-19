@@ -1,21 +1,36 @@
 import os
 
-# Get the absolute path of the project directory
+# Get absolute path to the application root directory
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Configuration dictionary
+# Database configuration
 config = {
-    'SECRET_KEY': 'your-secret-key-here',
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:///instance/recipes.db',
+    'SQLALCHEMY_DATABASE_URI': f'sqlite:///{os.path.join(basedir, "instance", "recipes.db")}',
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+    'SQLALCHEMY_ENGINE_OPTIONS': {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'connect_args': {
+            'check_same_thread': False,
+            'timeout': 30
+        }
+    },
     
-    # Image folder settings - ONLY using static/images
-    'UPLOAD_FOLDER': os.path.join(basedir, 'static', 'images'),
-    'AVATAR_FOLDER': os.path.join(basedir, 'static', 'images', 'avatars'),
-    'RECIPE_FOLDER': os.path.join(basedir, 'static', 'images', 'recipes'),
-    'MAX_CONTENT_LENGTH': 16 * 1024 * 1024,  # 16MB max file size
+    # Rest of your config settings...
+    'SECRET_KEY': 'dev',
+    'SESSION_COOKIE_SECURE': True,
+    'SESSION_COOKIE_HTTPONLY': True,
+    'SESSION_COOKIE_SAMESITE': 'Lax',
+    'UPLOAD_FOLDER': os.path.join(basedir, 'static', 'uploads'),
+    'MAX_CONTENT_LENGTH': 16 * 1024 * 1024,
     'ALLOWED_EXTENSIONS': {'png', 'jpg', 'jpeg', 'gif'},
+    'ADMIN_USERNAME': 'admin',
+    'ADMIN_PASSWORD': 'admin123'
 }
+
+# Create necessary directories
+os.makedirs(os.path.join(basedir, 'instance'), exist_ok=True)
+os.makedirs(os.path.join(basedir, 'static', 'uploads'), exist_ok=True)
 
 # Create folders if they don't exist
 def create_upload_folders():

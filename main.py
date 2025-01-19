@@ -18,6 +18,7 @@ import click
 from flask_mail import Mail, Message
 import random
 import string
+
 from flask import (
     Flask, render_template, request, redirect, send_from_directory,
     url_for, flash, session, abort, send_file, jsonify, g, Blueprint
@@ -26,6 +27,7 @@ from flask_login import (
     LoginManager, login_user, logout_user,
     login_required, current_user
 )
+from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from reportlab.lib import colors
@@ -51,8 +53,7 @@ from routes.main import main_bp  # Add this import at the top
 # Create Flask app
 app = Flask(__name__)
 app.config.from_object(AppConfig)
-# Register Blueprint
-app.register_blueprint(main_bp)
+
 
 # Configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -68,7 +69,7 @@ app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
 
     # File upload configuration
-    UPLOAD_FOLDER=os.path.join('static', 'uploads'),
+    UPLOAD_FOLDER=os.path.join(app.root_path,'static', 'uploads'),
     MAX_CONTENT_LENGTH=16 * 1024 * 1024,
     ALLOWED_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif'},
 
@@ -84,19 +85,43 @@ file_handler = RotatingFileHandler('logs/Recipe_Master.log', maxBytes=10240, bac
 file_handler.setFormatter(logging.Formatter(
     '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
 ))
+
 file_handler.setLevel(logging.INFO)
 app.logger.addHandler(file_handler)
 app.logger.setLevel(logging.INFO)
 app.logger.info('Recipe Master startup')
-login_manager = LoginManager()
-# Initialize Flask-Login
-login_manager.init_app(app)
-migrate.init_app(app, db)
-login_manager.login_view = 'main.login'
 
 
 # Initialize extensions
 db.init_app(app)
+migrate.init_app(app, db)
+
+# Initialize Login Manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'main.login'  # Specify the login view
+login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message_category = 'info'
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+"""
+@login_manager.user_loader
+def load_user(user_id):
+    #from models import User
+    return User.query.get(int(user_id))
+"""
+# Register blueprints
+app.register_blueprint(main_bp)
+
+
+# Redirect root URL to login
+@app.route('/')
+def root():
+    return redirect(url_for('main.login'))
+
 
 # Create category helper instance
 helper = CategoryHelper()
@@ -312,10 +337,6 @@ def manage_recipes():
     recipes = db.session.query(Recipe).filter_by(user_id=current_user.id).all()
     return render_template('manage_recipes.html', recipes=recipes)
 
-@login_manager.user_loader
-def load_user(user_id):
-    from models import User
-    return User.query.get(int(user_id))
 
 
 
@@ -2521,23 +2542,6 @@ def update_search_index():
     except sqlite3.Error as e:
         db.execute('ROLLBACK')
         app.logger.error(f'Error updating search index: {e}')
-
-
-"""if __name__ == '__main__':
-    # Ensure instance folder exists
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
-
-    # Ensure upload folder exists
-    try:
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-    except OSError:
-        pass
-
-    app.run(debug=True)
-"""
 
 
 # the corrected background task code

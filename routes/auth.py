@@ -3,6 +3,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from models.models import User
 from extensions import db
+from forms.login_form import LoginForm
+from forms.register_form import RegisterForm
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -43,27 +45,28 @@ def register():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        remember = True if request.form.get('remember') else False
-
-        user = User.query.filter_by(username=username).first()
-
-        if not user or not check_password_hash(user.password, password):
-            flash('Please check your login details and try again.')
-            return redirect(url_for('auth.login'))
-
-        login_user(user, remember=remember)
+    if current_user.is_authenticated:
         return redirect(url_for('main.index'))
-
-    return render_template('auth/login.html')
+    
+    form = LoginForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            user = User.query.filter_by(email=form.email.data).first()
+            if user and user.check_password(form.password.data):
+                login_user(user, remember=form.remember.data)
+                flash('Logged in successfully!', 'success')
+                next_page = request.args.get('next')
+                return redirect(next_page if next_page else url_for('main.index'))
+            else:
+                flash('Invalid email or password.', 'danger')
+    
+    return render_template('auth/login.html', form=form)
 
 @auth_bp.route('/logout')
-@login_required
 def logout():
     logout_user()
-    return redirect(url_for('main.index'))
+    flash('Logged out successfully.', 'success')
+    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/profile')
 @login_required

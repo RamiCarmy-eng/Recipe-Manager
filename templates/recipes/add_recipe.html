@@ -1,84 +1,150 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container">
     <h2>Add New Recipe</h2>
     <form method="POST" enctype="multipart/form-data">
         {{ form.csrf_token }}
         
-        <div class="mb-3">
-            {{ form.title.label(class="form-label") }}
-            {{ form.title(class="form-control") }}
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-control") }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.category.label(class="form-label") }}
+                    {{ form.category(class="form-control") }}
+                </div>
+            </div>
         </div>
 
-        <div class="mb-3">
+        <div class="form-group mb-3">
             {{ form.description.label(class="form-label") }}
-            {{ form.description(class="form-control") }}
+            {{ form.description(class="form-control", rows="3") }}
         </div>
 
-        <div class="mb-3">
-            {{ form.category.label(class="form-label") }}
-            {{ form.category(class="form-control") }}
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="form-group">
+                    {{ form.prep_time.label(class="form-label") }}
+                    {{ form.prep_time(class="form-control") }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    {{ form.cook_time.label(class="form-label") }}
+                    {{ form.cook_time(class="form-control") }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    {{ form.servings.label(class="form-label") }}
+                    {{ form.servings(class="form-control") }}
+                </div>
+            </div>
         </div>
 
-        <div class="mb-3">
+        <div class="form-group mb-3">
             <label class="form-label">Ingredients</label>
             <div id="ingredients-container">
-                {% for ingredient in form.ingredients %}
-                <div class="ingredient-entry mb-2">
-                    {{ ingredient.name(class="form-control mb-1", placeholder="Ingredient Name") }}
-                    <div class="row">
-                        <div class="col">
-                            {{ ingredient.amount(class="form-control", placeholder="Amount") }}
-                        </div>
-                        <div class="col">
-                            {{ ingredient.unit(class="form-control", placeholder="Unit") }}
-                        </div>
-                        <div class="col-auto">
-                            <button type="button" class="btn btn-danger remove-ingredient">Remove</button>
-                        </div>
+                <div class="ingredient-row row mb-2">
+                    <div class="col-md-3">
+                        <input type="text" name="ingredients[]" class="form-control" placeholder="Ingredient Name" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="amounts[]" class="form-control" placeholder="Amount" required>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="units[]" class="form-control">
+                            <option value="g">Grams</option>
+                            <option value="kg">Kilograms</option>
+                            <option value="ml">Milliliters</option>
+                            <option value="l">Liters</option>
+                            <option value="tsp">Teaspoon</option>
+                            <option value="tbsp">Tablespoon</option>
+                            <option value="cup">Cup</option>
+                            <option value="piece">Piece</option>
+                            <option value="to taste">To Taste</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="ingredient_categories[]" class="form-control">
+                            <option value="vegetable">Vegetable</option>
+                            <option value="fruit">Fruit</option>
+                            <option value="meat">Meat</option>
+                            <option value="dairy">Dairy</option>
+                            <option value="grain">Grain</option>
+                            <option value="spice">Spice</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-danger remove-ingredient">Remove</button>
                     </div>
                 </div>
-                {% endfor %}
             </div>
-            <button type="button" class="btn btn-secondary" id="add-ingredient">Add Ingredient</button>
+            <button type="button" class="btn btn-secondary mt-2" id="add-ingredient">Add Ingredient</button>
         </div>
 
-        <div class="mb-3">
+        <div class="form-group mb-3">
             {{ form.instructions.label(class="form-label") }}
-            {{ form.instructions(class="form-control") }}
+            {{ form.instructions(class="form-control", rows="5") }}
         </div>
 
-        <div class="mb-3">
-            {{ form.image.label(class="form-label") }}
-            {{ form.image(class="form-control") }}
+        <div class="form-group mb-3">
+            <label class="form-label">Recipe Image</label>
+            <input type="file" name="image" class="form-control" accept="image/*">
         </div>
 
-        <button type="submit" class="btn btn-primary">Add Recipe</button>
+        <div class="button-group">
+            <button type="submit" class="btn btn-primary">Save Recipe</button>
+            <a href="{{ url_for('main.recipes') }}" class="btn btn-secondary">Cancel</a>
+        </div>
     </form>
 </div>
 
 <script>
 document.getElementById('add-ingredient').addEventListener('click', function() {
     const container = document.getElementById('ingredients-container');
-    const newIngredient = container.children[0].cloneNode(true);
+    const newRow = container.querySelector('.ingredient-row').cloneNode(true);
     
-    // Clear input values
-    newIngredient.querySelectorAll('input').forEach(input => input.value = '');
+    // Clear the input values
+    newRow.querySelectorAll('input').forEach(input => input.value = '');
     
     // Add remove button functionality
-    newIngredient.querySelector('.remove-ingredient').addEventListener('click', function() {
-        this.closest('.ingredient-entry').remove();
+    newRow.querySelector('.remove-ingredient').addEventListener('click', function() {
+        this.closest('.ingredient-row').remove();
     });
     
-    container.appendChild(newIngredient);
+    container.appendChild(newRow);
 });
 
-// Add remove functionality to existing ingredient entries
+// Add remove functionality to existing remove buttons
 document.querySelectorAll('.remove-ingredient').forEach(button => {
     button.addEventListener('click', function() {
-        this.closest('.ingredient-entry').remove();
+        this.closest('.ingredient-row').remove();
     });
+});
+
+const categories = {{ categories|tojson }};  // Pass the categories dict from your route
+
+document.getElementById('category').addEventListener('change', function() {
+    const subcategorySelect = document.getElementById('subcategory');
+    const selectedCategory = this.value;
+    
+    // Clear existing options
+    subcategorySelect.innerHTML = '';
+    
+    // Add new options based on selected category
+    if (categories[selectedCategory]) {
+        categories[selectedCategory].forEach(subcat => {
+            const option = new Option(subcat, subcat);
+            subcategorySelect.add(option);
+        });
+    }
 });
 </script>
 {% endblock %} 
