@@ -1,21 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}About - Recipe Master{% endblock %}
-
 {% block content %}
-<div class="about-section">
-    <h1>About Recipe Master</h1>
-    <p>Welcome to Recipe Master, your personal recipe collection manager!</p>
-    
-    <h2>Our Mission</h2>
-    <p>We aim to help you organize, discover, and share your favorite recipes.</p>
-    
-    <h2>Features</h2>
-    <ul>
-        <li>Create and manage your recipes</li>
-        <li>Share recipes with others</li>
-        <li>Create shopping lists</li>
-        <li>Plan your meals</li>
-    </ul>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>About Recipe Manager</h2>
+            <hr>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Recipe Management System</h5>
+                    <p class="card-text">
+                        This application helps you manage your recipes, ingredients, and shopping lists.
+                        Features include:
+                    </p>
+                    <ul>
+                        <li>Create and manage recipes</li>
+                        <li>Track ingredients</li>
+                        <li>Generate shopping lists</li>
+                        <li>User authentication</li>
+                    </ul>
+                    <p class="card-text">
+                        <small class="text-muted">Version 1.0</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-{% endblock %} 
+{% endblock %}

@@ -20,7 +20,7 @@ class User(UserMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(128))
+    password = db.Column(db.String(120), nullable=False)
     role = db.Column(db.String(20), default='user')
     email = db.Column(db.String(120), unique=True, nullable=False)
     avatar = db.Column(db.String(200))
@@ -210,18 +210,15 @@ class RecipeIngredient(db.Model):
 
 
 class UserActivity(db.Model):
-    __tablename__ = 'user_activity'
-    __table_args__ = {'extend_existing': True}  # Added this line
-
+    __tablename__ = 'user_activities'
+    __table_args__ = {'extend_existing': True}
+    
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    activity_type = db.Column(db.String(50), nullable=False)
-    details = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)  # Added this line
-
-    # Add relationship to User model
-    user = db.relationship('User', backref='activities', lazy=True)
+    action = db.Column(db.String(50), nullable=False)
+    details = db.Column(db.String(255))
+    ip_address = db.Column(db.String(45))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f'<UserActivity {self.activity_type}>'
+        return f'<UserActivity {self.action}>'

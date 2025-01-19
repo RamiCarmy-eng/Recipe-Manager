@@ -10,22 +10,17 @@ import time
 import uuid
 from datetime import datetime
 from functools import wraps
-from sqlalchemy.orm import joinedload
+
 # Third-party imports
+from sqlalchemy.orm import joinedload
 from PIL import Image
 import click
 from flask_mail import Mail, Message
 import random
 import string
-from routes.admin import admin_bp
-
-from flask_mail import Mail, Message
-from datetime import datetime
-import logging
-from logging.handlers import RotatingFileHandler
 from flask import (
     Flask, render_template, request, redirect, send_from_directory,
-    url_for, flash, session, abort, send_file, jsonify, g,Blueprint
+    url_for, flash, session, abort, send_file, jsonify, g, Blueprint
 )
 from flask_login import (
     LoginManager, login_user, logout_user,
@@ -36,29 +31,34 @@ from werkzeug.utils import secure_filename
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+import logging
+from logging.handlers import RotatingFileHandler
 
 # Local imports
-from extensions import db, login_manager
+from routes.admin import admin_bp
+from extensions import db, login_manager,migrate
 from utils.category_helpers import CategoryHelper
 from config import Config, AppConfig
-
-# Model imports - all in one place
-from models import (
-    User, Recipe, Ingredient, Category,
-    Favorite, Comment, RecipeIngredient,
-    ShoppingList, ShoppingListItem
+from models.models import (
+    User, Recipe, Category, Ingredient,
+    Comment, Favorite, ShoppingList,
+    UserActivity, RecipeIngredient, ShoppingListItem
 )
 
-main_bp = Blueprint('main', __name__)
+
+from routes.main import main_bp  # Add this import at the top
 
 # Create Flask app
 app = Flask(__name__)
 app.config.from_object(AppConfig)
-app.register_blueprint(admin_bp)
+# Register Blueprint
+app.register_blueprint(main_bp)
+
 # Configuration
+basedir = os.path.abspath(os.path.dirname(__file__))
 app.config.update(
     # Database configuration
-    SQLALCHEMY_DATABASE_URI='sqlite:///instance/recipes_images.db',  # Updated path
+    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, 'instance', 'recipes.db'),
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
 
     # Security configuration
@@ -76,15 +76,7 @@ app.config.update(
     ADMIN_USERNAME='admin',
     ADMIN_PASSWORD='admin123'
 )
-"""
-# Configure email
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your-email@gmail.com'  # Update this
-app.config['MAIL_PASSWORD'] = 'your-app-password'     # Update this
-mail = Mail(app)
-"""
+
 # Configure logging
 if not os.path.exists('logs'):
     os.mkdir('logs')
@@ -96,39 +88,28 @@ file_handler.setLevel(logging.INFO)
 app.logger.addHandler(file_handler)
 app.logger.setLevel(logging.INFO)
 app.logger.info('Recipe Master startup')
-
-# Initialize Flask-Login
 login_manager = LoginManager()
+# Initialize Flask-Login
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+migrate.init_app(app, db)
+login_manager.login_view = 'main.login'
+
 
 # Initialize extensions
 db.init_app(app)
 
-
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
 # Create category helper instance
 helper = CategoryHelper()
-login_manager.init_app(app)
 
+# Create necessary directories
+if not os.path.exists('instance'):
+    os.makedirs('instance')
+if not os.path.exists('static/uploads'):
+    os.makedirs('static/uploads')
 
-# Create tables within application context
+# Initialize database
 with app.app_context():
     db.create_all()
-
-@main_bp.route('/')
-def index():
-    # Get just basic recipe info without the missing columns
-    featured_recipes = Recipe.query.limit(6).all()
-    recipes = Recipe.query.limit(6).all()
-    categories = Category.query.all()
-    return render_template('main/index.html',
-                           recipes=recipes,
-                           categories=categories,
-                         featured_recipes=featured_recipes)
-
 
 def admin_required(f):
     @wraps(f)
@@ -146,18 +127,6 @@ def send_email_notification(subject, recipient, template):
     print(f"Subject: {subject}")
     return True
 
-# User Activity Model
-class UserActivity(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    action = db.Column(db.String(50), nullable=False)
-    details = db.Column(db.String(255))
-    ip_address = db.Column(db.String(45))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def __repr__(self):
-        return f'<UserActivity {self.action}>'
-
 
 """
 # Email notification function
@@ -172,6 +141,7 @@ def send_email_notification(subject, recipient, template):
     except Exception as e:
         app.logger.error(f'Failed to send email: {str(e)}')
 """
+
 # Log user activity
 def log_user_activity(user_id, action, details=None):
     try:
@@ -447,23 +417,6 @@ def format_datetime(value):
 
 app.jinja_env.filters['datetime'] = format_datetime
 
-"""# Authentication routes
-@app.route('/')
-def index():
-    return redirect(url_for('login'))"""
-
-
-# Home route
-@app.route('/')
-def home():
-    try:
-        recent_recipes = Recipe.query.order_by(Recipe.created_at.desc()).limit(6).all()
-    except Exception as e:
-        recent_recipes = []
-        app.logger.error(f"Error fetching recipes_images: {e}")
-
-    return render_template('home.html', recent_recipes=recent_recipes)
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -482,7 +435,7 @@ def login():
             session['role'] = user.role
 
             flash('Login successful!', 'success')
-            return redirect(url_for('home'))
+            return redirect(url_for('main.index'))
 
         flash('Invalid username or password', 'error')
 

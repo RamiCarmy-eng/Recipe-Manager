@@ -1,58 +1,39 @@
-# Recipe-Master Debug Plan
+# TODO List
 
-## Current Status (As of Last Session)
-- Basic functionality working
-- All changes saved in Git
-- Working on `debug-features` branch
-- Main code preserved in other branches
+## High Priority
+1. Fix Database Models
+   - [x] Remove duplicate UserActivity model
+   - [ ] Update database migrations
+   - [ ] Test all model relationships
 
-## Issues to Fix
-1. **Recipe View Issues**
-   - Problem: Shows only headers without content
-   - Files: 
-     - `main.py` (view_recipe function)
-     - `templates/recipe.html`
-   - Status: Partially working
+2. Route Fixes
+   - [ ] Test all routes with updated models
+   - [ ] Add error handling for missing routes
+   - [ ] Implement proper redirects
 
-2. **Recipe List Issues**
-   - Problem: Missing images in recipe list
-   - Files:
-     - `templates/recipes.html`
-     - `main.py` (recipes route)
-   - Status: List shows but without images
+3. Template Updates
+   - [ ] Ensure all templates use correct URL endpoints
+   - [ ] Add proper error messages
+   - [ ] Test responsive design
 
-3. **Add Recipe Error**
-   - Problem: CategoryHelper error when clicking Add Recipe
-   - Error: 'CategoryHelper' object has no attribute 'get_available_ingredients'
-   - Files:
-     - `main.py`
-     - CategoryHelper class
-   - Status: Not working
+## Medium Priority
+4. User Experience
+   - [ ] Add loading indicators
+   - [ ] Improve form validation messages
+   - [ ] Add confirmation dialogs for important actions
 
-4. **Navigation Issues**
-   - Problem: Missing tabs (Manage Recipes, Manage Users, Shopping List)
-   - Files:
-     - `templates/base.html`
-   - Status: Basic navigation working, needs completion
+5. Testing
+   - [ ] Write unit tests for models
+   - [ ] Test user authentication flow
+   - [ ] Test recipe CRUD operations
 
-## Starting Steps
-1. Verify branch:
-   ```bash
-   git status  # Should show on debug-features branch
-   ```
+## Low Priority
+6. Documentation
+   - [ ] Update API documentation
+   - [ ] Add setup instructions
+   - [ ] Document database schema
 
-2. Start with recipe view fix:
-   - Check view_recipe function in main.py
-   - Verify template variables
-   - Test recipe detail display
-
-## Git Commands to Remember
-- Check branch: `git status`
-- Save changes: `git add .` then `git commit -m "message"`
-- Switch to main if needed: `git checkout main`
-- Return to debug: `git checkout debug-features`
-
-## Notes
-- Don't merge to main until all fixes are tested
-- Keep track of any new issues found
-- Test each fix before moving to next issue 
+7. Optimization
+   - [ ] Optimize database queries
+   - [ ] Add caching where appropriate
+   - [ ] Compress static assets 
