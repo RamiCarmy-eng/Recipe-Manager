@@ -2,7 +2,7 @@ import os
 import sqlite3
 import time
 from sqlalchemy import text
-from wsgi import app, db  # Import from your original wsgi.py
+from wsgiO import app, db  # Import from your original wsgiO.py
 
 def test_connection():
     print("\nTesting database connection...")

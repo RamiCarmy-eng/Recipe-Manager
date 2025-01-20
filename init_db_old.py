@@ -3,10 +3,9 @@ import os
 import sqlite3
 import time
 from wsgiO import app, db
-from models.models import User, Recipe, Ingredient, Category, IngredientCategory
+from models.models import User, Recipe, Ingredient
 from werkzeug.security import generate_password_hash
-from app import create_app
-from extensions import db
+
 
 def init_db():
     # Create instance directory if it doesn't exist
@@ -29,7 +28,7 @@ def init_db():
             attempt += 1
             print(f"Database is locked. Attempt {attempt} of {max_attempts}...")
             time.sleep(1)  # Wait for 1 second before trying again
-            
+
             # On the last attempt, try to close all connections
             if attempt == max_attempts - 1:
                 try:
@@ -73,7 +72,8 @@ def init_db():
                     description=recipe_data.get('description', ''),
                     prep_time=0,
                     servings=4,
-                    instructions='\n'.join(recipe_data.get('instructions', [])) if 'instructions' in recipe_data else '',
+                    instructions='\n'.join(
+                        recipe_data.get('instructions', [])) if 'instructions' in recipe_data else '',
                     image=recipe_data.get('image_path', '')
                 )
                 db.session.add(recipe)
@@ -115,12 +115,6 @@ def init_db():
 
         print(f"Database created at: {os.path.abspath(DB_PATH)}")
 
-def init_database():
-    app = create_app()
-    with app.app_context():
-        print("Creating database tables...")
-        db.create_all()
-        print("Database tables created successfully!")
 
 if __name__ == '__main__':
     try:
@@ -130,6 +124,5 @@ if __name__ == '__main__':
             db.engine.dispose()
     except:
         pass
-    
+
     init_db()
-    init_database()

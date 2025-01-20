@@ -2,6 +2,9 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Recipe-Master" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Recipe-Master-Fresh" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/git-filter-repo" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp_folder" vcs="Git" />
   </component>
 </project>

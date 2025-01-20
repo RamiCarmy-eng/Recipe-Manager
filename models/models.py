@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask_login import UserMixin
 from extensions import db
-
+from sqlalchemy.ext.hybrid import hybrid_property
 
 class Comment(db.Model):
     __tablename__ = 'comments'
@@ -16,6 +16,7 @@ class Comment(db.Model):
 
     def __repr__(self):
         return f'<Comment {self.id}>'
+
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -37,12 +38,63 @@ class User(UserMixin, db.Model):
     shopping_lists = db.relationship('ShoppingList', backref='user', lazy=True)
     activities = db.relationship('UserActivity', backref='user', lazy=True)
 
+    preference = db.relationship('UserPreference', backref='qwner', uselist=False)
+
+    def get_id(self):
+        return str(self.id)
+
+    @property
+    def is_active(self):
+        return True
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
+class UserPreference(db.Model):
+    __tablename__ = 'user_preferences'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    email_notifications = db.Column(db.Boolean, default=True)
+    public_profile = db.Column(db.Boolean, default=False)
+    default_servings = db.Column(db.Integer, default=4)
+    measurement_system = db.Column(db.String(10), default='metric')  # 'metric' or 'imperial'
+    theme = db.Column(db.String(20), default='light')  # 'light' or 'dark'
+    language = db.Column(db.String(5), default='en')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship with User
+    #user = db.relationship('User', backref=db.backref('preferences', uselist=False))
+
+    def __repr__(self):
+        return f'<UserPreference {self.user_id}>'
+
+    @property
+    def is_active(self):
+        return True  # You can add logic here if needed
+
+    @property
+    def is_authenticated(self):
+        return True  # You can add logic here if needed
+
+    @property
+    def is_anonymous(self):
+        return False
+
+
 class Recipe(db.Model):
     __tablename__ = 'recipes'
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
     instructions = db.Column(db.Text, nullable=False)
     prep_time = db.Column(db.Integer, nullable=False)
@@ -52,14 +104,39 @@ class Recipe(db.Model):
     image = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
+    category = db.Column(db.String(100))
+    subcategory = db.Column(db.String(100))
 
-    user = db.relationship('User', back_populates='recipes')
+    # Boolean flags
+    is_reported = db.Column(db.Boolean, default=False)
+    is_approved = db.Column(db.Boolean, default=False)
+    is_hidden = db.Column(db.Boolean, default=False)
+    is_featured = db.Column(db.Boolean, default=False)
+    rejection_reason = db.Column(db.String(255))
+
+    # Relationships
+    user = db.relationship('User', back_populates='recipes')  # Matches User model's recipes relationship
     category = db.relationship('Category', backref='recipes', lazy=True)
-    ingredients = db.relationship('Ingredient', backref='recipe', lazy=True, cascade='all, delete-orphan')
+    ingredients = db.relationship('RecipeIngredient', backref='recipe',
+                                  cascade='all, delete-orphan')  # Links to RecipeIngredient model
+    comments = db.relationship('Comment', backref='recipe', cascade='all, delete-orphan')
+    favorites = db.relationship('Favorite', backref='recipe', cascade='all, delete-orphan')
 
+
+    # Hybrid property to handle both name and title
+    @hybrid_property
+    def title(self):
+        return self.name
+
+    @title.setter
+    def title(self, value):
+        self.name = value
+
+
+    def __repr__(self):
+        return f'<Recipe {self.name}>'
 
 class Category(db.Model):
     __tablename__ = 'categories'
@@ -112,6 +189,7 @@ class ShoppingList(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class ShoppingListItem(db.Model):
     __tablename__ = 'shopping_list_items'
@@ -217,7 +295,7 @@ class RecipeIngredient(db.Model):
 class UserActivity(db.Model):
     __tablename__ = 'user_activities'
     __table_args__ = {'extend_existing': True}
-    
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     action = db.Column(db.String(50), nullable=False)

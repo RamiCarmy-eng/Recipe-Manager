@@ -1,10 +1,16 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
-from flask_login import login_required, current_user
-from models import Recipe, Ingredient, RecipeIngredient
-from extensions import db
 from forms.recipe import RecipeForm
+from flask_login import login_required, current_user
+from models.models import Recipe, Category, Ingredient
+from extensions import db
 
 recipe_bp = Blueprint('recipe', __name__)
+
+@recipe_bp.route('/')
+@login_required
+def index():
+    recipes = Recipe.query.all()
+    return render_template('recipes/index.html', recipes=recipes)
 
 @recipe_bp.route('/recipes')
 @login_required
@@ -12,15 +18,42 @@ def list_recipes():
     recipes = Recipe.query.filter_by(user_id=current_user.id).all()
     return render_template('recipe/list.html', recipes=recipes)
 
-@recipe_bp.route('/recipe/create', methods=['GET', 'POST'])
+@recipe_bp.route('/create', methods=['GET', 'POST'])
 @login_required
 def create():
     if request.method == 'POST':
-        # Handle recipe creation later
-        pass
-    return render_template('recipe/create.html')
+        # Handle recipe creation
+        title = request.form.get('title')
+        description = request.form.get('description')
+        instructions = request.form.get('instructions')
+        prep_time = request.form.get('prep_time')
+        cook_time = request.form.get('cook_time')
+        servings = request.form.get('servings')
+        difficulty = request.form.get('difficulty')
+        category_id = request.form.get('category_id')
 
-@recipe_bp.route('/recipe/add', methods=['GET', 'POST'])
+        recipe = Recipe(
+            title=title,
+            description=description,
+            instructions=instructions,
+            prep_time=prep_time,
+            cook_time=cook_time,
+            servings=servings,
+            difficulty=difficulty,
+            category_id=category_id,
+            user_id=current_user.id
+        )
+
+        db.session.add(recipe)
+        db.session.commit()
+
+        flash('Recipe created successfully!')
+        return redirect(url_for('recipe.index'))
+
+    categories = Category.query.all()
+    return render_template('recipes/create.html', categories=categories)
+
+@recipe_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add_recipe():
     form = RecipeForm()
@@ -56,7 +89,7 @@ def add_recipe():
         db.session.add(recipe)
         db.session.commit()
         flash('Recipe added successfully!', 'success')
-        return redirect(url_for('recipe.recipes'))
+        return redirect(url_for('recipe.list_recipes'))
 
     return render_template('recipes/add_recipe.html', form=form, title='Add Recipe')
 
@@ -81,4 +114,4 @@ def search_ingredients():
         'name': i.name,
         'category': i.category.name,
         'default_unit': i.default_unit
-    } for i in ingredients]) 
+    } for i in ingredients])

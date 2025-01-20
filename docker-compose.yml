@@ -7,7 +7,7 @@ services:
     container_name: recipe-manager-web
     restart: unless-stopped
     environment:
-      - FLASK_APP=wsgi.py
+      - FLASK_APP=wsgiO.py
       - FLASK_ENV=production
       - DATABASE_URL=sqlite:///instance/recipes_images.db
       - SECRET_KEY=${SECRET_KEY:-default-secret-key-change-me}

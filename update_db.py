@@ -1,4 +1,4 @@
-from wsgi import app, db
+from wsgiO import app, db
 from sqlalchemy import text
 
 def column_exists(conn, table, column):

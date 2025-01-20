@@ -5,6 +5,14 @@
     <div class="row">
         <div class="col-md-8">
             <h1>{{ recipe.title }}</h1>
+            {% if recipe.image %}
+            <div class="recipe-image mb-4">
+                <img src="{{ url_for('static', filename='uploads/images/' + recipe.image) }}" 
+                     class="img-fluid rounded" 
+                     alt="{{ recipe.title }}">
+            </div>
+            {% endif %}
+            
             <div class="recipe-meta">
                 <span class="badge badge-primary">{{ recipe.category.name }}</span>
                 <span class="badge badge-info">{{ recipe.difficulty }}</span>

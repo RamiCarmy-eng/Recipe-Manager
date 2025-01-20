@@ -1,4 +1,4 @@
-from wsgi import app, db
+from wsgiO import app, db
 from flask_migrate import Migrate, upgrade
 
 migrate = Migrate(app, db)

@@ -10,10 +10,9 @@ class ShoppingList(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
-    # Define relationships
-    user = db.relationship('User', back_populates='shopping_lists')
+    # Relationships
+    
     items = db.relationship('ShoppingListItem', backref='shopping_list', lazy=True, cascade='all, delete-orphan')
-
 
 
 class ShoppingListItem(db.Model):
@@ -25,9 +24,7 @@ class ShoppingListItem(db.Model):
     amount = db.Column(db.Float)
     unit = db.Column(db.String(50))
     checked = db.Column(db.Boolean, default=False)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes_images.id'))  # Optional: track which recipe it came from
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'))  # Optional: track which recipe it came from
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
-    # Optional: link to recipe
-    recipe = db.relationship('Recipe', backref=db.backref('shopping_items', lazy=True))

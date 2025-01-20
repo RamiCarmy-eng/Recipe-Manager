@@ -1,5 +1,5 @@
 import os
-from wsgi import app, db
+from wsgiO import app, db
 from models.models import User, Recipe, Ingredient, Comment, Category, Favorite
 from models.models import ShoppingList, ShoppingListItem, CollaborativeList, UserActivity
 

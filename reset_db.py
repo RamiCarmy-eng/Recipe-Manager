@@ -1,7 +1,7 @@
 import os
 import shutil
 import time
-from wsgi import app, db
+from wsgiO import app, db
 
 def reset_database():
     print("Starting database reset...")

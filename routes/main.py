@@ -24,7 +24,9 @@ def allowed_file(filename):
 
 @main_bp.route('/')
 def index():
-    return redirect(url_for('main.login'))
+    if current_user.is_authenticated:
+        return redirect(url_for('main.recipes'))
+    return redirect(url_for('auth.login'))
 
 @main_bp.route('/about')
 def about():
@@ -485,3 +487,12 @@ def import_recipes():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
+
+@main_bp.route('/category/<int:category_id>')
+@login_required
+def recipes_by_category(category_id):
+    category = Category.query.get_or_404(category_id)
+    recipes = Recipe.query.filter_by(category_id=category_id).all()
+    return render_template('recipes/recipes_by_category.html', 
+                         category=category, 
+                         recipes=recipes)

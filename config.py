@@ -9,10 +9,11 @@ if not os.path.exists(instance_path):
     os.makedirs(instance_path)
 
 class Config:
-    # Database
-    db_path = os.path.join(basedir, 'instance', 'recipes.db')
-    SQLALCHEMY_DATABASE_URI = f'sqlite:///{db_path}'
+    SECRET_KEY = 'dev'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    UPLOAD_FOLDER = os.path.join('static', 'uploads')
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
     # Database connection settings
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -25,7 +26,6 @@ class Config:
     }
 
     # Security
-    SECRET_KEY = 'dev'  # Change this to a random string in production
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'

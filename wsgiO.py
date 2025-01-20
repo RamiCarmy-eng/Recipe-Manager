@@ -9,23 +9,9 @@ from extensions import db, login_manager
 from sqlalchemy import text
 from app import create_app
 from config import Config
-from jinja2 import Environment
-from flask_login import LoginManager
-from routes.auth import auth_bp
+
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return models.User.query.get(int(user_id))
-
-
-def nl2br(value):
-    return value.replace('\n', '<br>\n')
-
 
 def create_app():
     app = Flask(__name__,
@@ -40,18 +26,13 @@ def create_app():
     app.config.from_object(Config)
 
     # Override database URI with absolute path
-    app.config['SECRET_KEY'] = 'dev'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Set configuration
     app.config.update(config)
 
 
     # Initialize extensions
-    login_manager = LoginManager()
-    login_manager.login_view = 'auth.login'
-    login_manager.login_message_category = 'info'
     db.init_app(app)
     login_manager.init_app(app)
 
@@ -109,44 +90,41 @@ def create_app():
     app.register_blueprint(comment_bp)
     app.register_blueprint(template_bp)
 
-    def nl2br(value):
-        return value.replace('\n', '<br>\n')
-
-    # Register jinja2 filters
-    app.jinja_env.filters['nl2br'] = nl2br
-
     return app
 
 app = create_app()
 
 if __name__ == '__main__':
     with app.app_context():
-        # Check and add missing columns safely
+        with app.app_context():
+            # Debug: Print table structure
+            with db.engine.connect() as conn:
+                # Check recipes table structure
+                result = conn.execute(text("PRAGMA table_info(recipes)"))
+                columns = result.fetchall()
+                print("\nRecipes Table Structure:")
+                for col in columns:
+                    print(f"Column: {col}")
+
+        db.create_all()
+
+        # Add new column if it doesn't exist
+        from models.models import Recipe
         with db.engine.connect() as conn:
             try:
-                # First, check what columns exist
+                # Check if column exists first
                 result = conn.execute(text("PRAGMA table_info(recipes)"))
-                existing_columns = [col[1] for col in result.fetchall()]
-                print("\nExisting columns:", existing_columns)
+                columns = [col[1] for col in result.fetchall()]
 
-                # Add missing columns if they don't exist
-                if 'cook_time' not in existing_columns:
-                    print("Adding cook_time column...")
-                    conn.execute(text('ALTER TABLE recipes ADD COLUMN cook_time INTEGER'))
-                
-                if 'difficulty' not in existing_columns:
-                    print("Adding difficulty column...")
-                    conn.execute(text('ALTER TABLE recipes ADD COLUMN difficulty VARCHAR(20)'))
-                
-                if 'category_id' not in existing_columns:
-                    print("Adding category_id column...")
-                    conn.execute(text('ALTER TABLE recipes ADD COLUMN category_id INTEGER REFERENCES categories(id)'))
-                
-                conn.commit()
-                print("Database update completed successfully!")
+                if 'subcategory' not in columns:
+                    conn.execute(text('ALTER TABLE recipes ADD COLUMN subcategory VARCHAR(100)'))
+                    conn.commit()
+                    print("Added subcategory column successfully")
+                else:
+                    print("Subcategory column already exists")
 
             except Exception as e:
-                print(f"Error updating database: {e}")
+                print(f"Error checking/adding column: {e}")
                 db.session.rollback()
 
     app.run(debug=True)

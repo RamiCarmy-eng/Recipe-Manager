@@ -1,1 +1,91 @@
- 
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Recipe</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.csrf_token }}
+        
+        <div class="mb-3">
+            {{ form.title.label(class="form-label") }}
+            {{ form.title(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.description.label(class="form-label") }}
+            {{ form.description(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.category.label(class="form-label") }}
+            {{ form.category(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Ingredients</label>
+            <div id="ingredients-container">
+                {% for ingredient in form.ingredients %}
+                <div class="ingredient-entry mb-2">
+                    {{ ingredient.name(class="form-control mb-1", placeholder="Ingredient Name") }}
+                    <div class="row">
+                        <div class="col">
+                            {{ ingredient.amount(class="form-control", placeholder="Amount") }}
+                        </div>
+                        <div class="col">
+                            {{ ingredient.unit(class="form-control", placeholder="Unit") }}
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-danger remove-ingredient">Remove</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-secondary" id="add-ingredient">Add Ingredient</button>
+        </div>
+
+        <div class="mb-3">
+            {{ form.instructions.label(class="form-label") }}
+            {{ form.instructions(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {% if recipe.image %}
+            <div class="current-image mb-2">
+                <img src="{{ url_for('static', filename='uploads/' + recipe.image) }}" alt="Current recipe image" style="max-width: 200px;">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="delete_image" id="delete_image">
+                    <label class="form-check-label" for="delete_image">Delete current image</label>
+                </div>
+            </div>
+            {% endif %}
+            {{ form.image.label(class="form-label") }}
+            {{ form.image(class="form-control") }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update Recipe</button>
+        <a href="{{ url_for('main.manage_recipes') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<script>
+// Same JavaScript as add_recipe.html for ingredient management
+document.getElementById('add-ingredient').addEventListener('click', function() {
+    const container = document.getElementById('ingredients-container');
+    const newIngredient = container.children[0].cloneNode(true);
+    newIngredient.querySelectorAll('input').forEach(input => input.value = '');
+    newIngredient.querySelector('.remove-ingredient').addEventListener('click', function() {
+        this.closest('.ingredient-entry').remove();
+    });
+    container.appendChild(newIngredient);
+});
+
+document.querySelectorAll('.remove-ingredient').forEach(button => {
+    button.addEventListener('click', function() {
+        if (document.querySelectorAll('.ingredient-entry').length > 1) {
+            this.closest('.ingredient-entry').remove();
+        }
+    });
+});
+</script>
+{% endblock %} 

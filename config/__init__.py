@@ -10,7 +10,7 @@ load_dotenv()
 
 class Config:
     # Basic Flask config
-    FLASK_APP = os.getenv('FLASK_APP', 'wsgi.py')
+    FLASK_APP = os.getenv('FLASK_APP', 'wsgiO.py')
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
     DEBUG = os.getenv('FLASK_DEBUG', True)
 

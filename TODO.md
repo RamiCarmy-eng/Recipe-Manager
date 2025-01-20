@@ -1,39 +1,49 @@
-# TODO List
+# Recipe-Master Project TODO List
 
-## High Priority
-1. Fix Database Models
-   - [x] Remove duplicate UserActivity model
-   - [ ] Update database migrations
-   - [ ] Test all model relationships
+## 1. Fix Login/Authentication Issues
+- [ ] Fix "Logged in successfully!" message appearing on empty form
+- [ ] Ensure proper redirection after login
+- [ ] Add proper password hashing in User model
+- [ ] Test session management
 
-2. Route Fixes
-   - [ ] Test all routes with updated models
-   - [ ] Add error handling for missing routes
-   - [ ] Implement proper redirects
+## 2. Fix Database Relationships
+- [ ] Complete User-Recipe relationship fixes
+- [ ] Test shopping list functionality
+- [ ] Verify category relationships
+- [ ] Fix foreign key constraints
 
-3. Template Updates
-   - [ ] Ensure all templates use correct URL endpoints
-   - [ ] Add proper error messages
-   - [ ] Test responsive design
+## 3. Fix Template Issues
+- [ ] Add missing images support
+- [ ] Fix recipe viewing template
+- [ ] Implement proper navigation tabs
+- [ ] Add proper error messages display
+- [ ] Fix nl2br filter implementation
 
-## Medium Priority
-4. User Experience
-   - [ ] Add loading indicators
-   - [ ] Improve form validation messages
-   - [ ] Add confirmation dialogs for important actions
+## 4. Add Core Features
+- [ ] Implement recipe search functionality
+- [ ] Add recipe categories management
+- [ ] Complete shopping list creation
+- [ ] Add ingredient management
+- [ ] Add recipe rating system
 
-5. Testing
-   - [ ] Write unit tests for models
-   - [ ] Test user authentication flow
-   - [ ] Test recipe CRUD operations
+## 5. Testing
+- [ ] Test user registration
+- [ ] Test recipe creation/editing
+- [ ] Test shopping list functionality
+- [ ] Verify all database relationships
+- [ ] Test image upload/display
 
-## Low Priority
-6. Documentation
-   - [ ] Update API documentation
-   - [ ] Add setup instructions
-   - [ ] Document database schema
+## 6. UI Improvements
+- [ ] Add proper form validation messages
+- [ ] Improve recipe display layout
+- [ ] Add loading indicators
+- [ ] Implement responsive design fixes
+- [ ] Add user feedback notifications
 
-7. Optimization
-   - [ ] Optimize database queries
-   - [ ] Add caching where appropriate
-   - [ ] Compress static assets 
+## Notes
+- Priority: Login fixes and database relationships
+- Remember to test each feature after implementation
+- Document any API changes
+- Keep track of completed items
+
+Last Updated: 2024-01-24
