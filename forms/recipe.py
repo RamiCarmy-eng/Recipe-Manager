@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, FieldList, FormField, IntegerField
+from wtforms import StringField, TextAreaField, SelectField, FieldList, FormField, IntegerField, FloatField
 from wtforms.validators import DataRequired, Length, Optional, NumberRange
 
 # Define your categories dictionary
@@ -47,19 +47,17 @@ class IngredientForm(FlaskForm):
     category = SelectField('Category', choices=[(cat, cat) for cat in categories.keys()])
 
 class RecipeForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired(), Length(min=2, max=100)])
-    description = TextAreaField('Description', validators=[DataRequired()])
-    instructions = TextAreaField('Instructions', validators=[DataRequired()])
-    prep_time = IntegerField('Preparation Time (minutes)', 
-                            validators=[DataRequired(), NumberRange(min=1)])
-    cook_time = IntegerField('Cooking Time (minutes)', 
-                            validators=[DataRequired(), NumberRange(min=1)])
-    servings = IntegerField('Servings', validators=[DataRequired(), NumberRange(min=1)])
-    difficulty = SelectField('Difficulty', 
-                           choices=[('easy', 'Easy'), 
-                                  ('medium', 'Medium'), 
-                                  ('hard', 'Hard')])
-    category = SelectField('Category', coerce=int)
-    image = FileField('Recipe Image', 
-                     validators=[FileAllowed(['jpg', 'png', 'jpeg'], 
-                                          'Images only!')]) 
+    title = StringField('Recipe Title', validators=[DataRequired(), Length(min=2, max=100)])
+    prep_time = FloatField('Preparation Time (minutes)', validators=[Optional()])
+    cook_time = FloatField('Cooking Time (minutes)', validators=[Optional()])
+    difficulty = SelectField('Difficulty', choices=[
+        ('easy', 'Easy'),
+        ('medium', 'Medium'),
+        ('hard', 'Hard')
+    ], validators=[Optional()])
+    category_id = SelectField('Category', coerce=int, validators=[Optional()])
+    description = TextAreaField('Instructions', validators=[DataRequired()])
+    image = FileField('Recipe Image', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')
+    ]) 

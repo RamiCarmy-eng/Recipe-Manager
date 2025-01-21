@@ -1,7 +1,8 @@
 import os
+from flask import Flask
 from app import create_app
 from extensions import db
-from models.models import Recipe, Category, Ingredient
+from models.models import Recipe, Category, Ingredient, User, Comment, Favorite, UserPreference, IngredientCategory, ShoppingList, ShoppingListItem, ShoppingListTemplate, TemplateItem, CollaborativeList, CollaborativeListMember, CollaborativeListItem, RecipeIngredient, UserActivity
 
 app = create_app()
 
@@ -48,6 +49,44 @@ def check_db_content():
         for ing in ingredients:
             print(f"- {ing.name}")
 
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///recipes.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db.init_app(app)
+    return app
+
+def check_database():
+    print("\n=== Database Table Contents ===")
+    tables = {
+        'Users': User,
+        'Recipes': Recipe,
+        'Categories': Category,
+        'Ingredients': Ingredient,
+        'Comments': Comment,
+        'Favorites': Favorite,
+        'UserPreferences': UserPreference,
+        'IngredientCategories': IngredientCategory,
+        'ShoppingLists': ShoppingList,
+        'ShoppingListItems': ShoppingListItem,
+        'ShoppingListTemplates': ShoppingListTemplate,
+        'TemplateItems': TemplateItem,
+        'CollaborativeLists': CollaborativeList,
+        'CollaborativeListMembers': CollaborativeListMember,
+        'CollaborativeListItems': CollaborativeListItem,
+        'RecipeIngredients': RecipeIngredient,
+        'UserActivities': UserActivity
+    }
+
+    for name, model in tables.items():
+        try:
+            count = db.session.query(model).count()
+            print(f"{name}: {count} rows")
+        except Exception as e:
+            print(f"Error with {name}: {str(e)}")
+
 if __name__ == "__main__":
     check_db()
     check_db_content()
+    with app.app_context():
+        check_database()

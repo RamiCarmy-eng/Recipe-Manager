@@ -13,8 +13,11 @@ from datetime import datetime
 import json
 import csv
 from io import StringIO
+from flask import Blueprint, render_template
+from flask_login import login_required
 
 main_bp = Blueprint('main', __name__)
+
 
 # Add this function to check allowed file extensions
 def allowed_file(filename):
@@ -24,9 +27,14 @@ def allowed_file(filename):
 
 @main_bp.route('/')
 def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('main.recipes'))
-    return redirect(url_for('auth.login'))
+    print("Current user authenticated:", current_user.is_authenticated)
+    print("Login view:", current_app.config.get('LOGIN_VIEW'))
+
+    if not current_user.is_authenticated:
+        print("Redirecting to login")
+        return redirect(url_for('auth.login'))
+    print("Redirecting to recipes")
+    return redirect(url_for('main.recipes'))
 
 @main_bp.route('/about')
 def about():
@@ -46,6 +54,11 @@ def contact():
 @main_bp.route('/recipes')
 @login_required
 def recipes():
+    # Add debug print
+    print("Accessing recipes, authenticated:", current_user.is_authenticated)
+    if not current_user.is_authenticated:
+        print("Not authenticated, redirecting to login")
+        return redirect(url_for('auth.login'))
     recipes = Recipe.query.filter_by(user_id=current_user.id).all()
     return render_template('recipes/recipes.html', recipes=recipes, title='All Recipes')
 
@@ -98,20 +111,20 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('main.login'))
 
-@main_bp.route('/manage-recipes')
+@main_bp.route('/manage/recipes')
 @login_required
 def manage_recipes():
-    if not current_user.is_admin:
-        flash('Access denied.', 'error')
+    if current_user.role != 'admin':
+        flash('Access denied.', 'danger')
         return redirect(url_for('main.index'))
     recipes = Recipe.query.all()
     return render_template('admin/manage_recipes.html', recipes=recipes)
 
-@main_bp.route('/manage-users')
+@main_bp.route('/manage/users')
 @login_required
 def manage_users():
-    if not current_user.is_admin:
-        flash('Access denied.', 'error')
+    if current_user.role != 'admin':
+        flash('Access denied.', 'danger')
         return redirect(url_for('main.index'))
     users = User.query.all()
     return render_template('admin/manage_users.html', users=users)
@@ -496,3 +509,13 @@ def recipes_by_category(category_id):
     return render_template('recipes/recipes_by_category.html', 
                          category=category, 
                          recipes=recipes)
+
+@main_bp.route('/favorites')
+@login_required
+def favorites():
+    return render_template('main/favorites.html')
+
+@main_bp.route('/profile')
+@login_required
+def profile():
+    return render_template('main/profile.html')

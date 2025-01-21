@@ -10,33 +10,26 @@ instance_path = os.path.join(basedir, 'instance')
 if not os.path.exists(instance_path):
     os.makedirs(instance_path)
 
-class Config:
+class BaseConfig:
     # Flask settings
-    SECRET_KEY = 'dev'  # Generate a secure random key
-    WTF_CSRF_ENABLED = False
+    SECRET_KEY = 'your-super-secret-key'
     DEBUG = True
-
+    
+    # Database settings
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + str(Path(basedir, 'instance', 'recipes.db'))
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
     # Instance folder for database and other instance-specific files
     INSTANCE_PATH = str(Path(basedir, 'instance'))
-
-    # Database settings
-    INSTANCE_FOLDER = str(Path(basedir, 'instance'))
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + str(Path(INSTANCE_FOLDER, 'recipes.db'))
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-    # Cache settings
-    CACHE_TYPE = 'SimpleCache'  # Changed from 'simple' to 'SimpleCache'
-    CACHE_DEFAULT_TIMEOUT = 300
-
-
+    
     # Mail settings
     MAIL_DEBUG = 1
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
-    MAIL_USERNAME = 'ramicarmy@gmail.com'
-    MAIL_PASSWORD = 'carmi123'
-    MAIL_DEFAULT_SENDER = 'ramicarmy@gmail.com'
+    MAIL_USERNAME = 'your-email@gmail.com'
+    MAIL_PASSWORD = 'your-password'
+    MAIL_DEFAULT_SENDER = 'your-email@gmail.com'
     MAIL_MAX_EMAILS = 10
     MAIL_ASCII_ATTACHMENTS = False
     
@@ -55,12 +48,6 @@ class Config:
     # Security settings
     WTF_CSRF_ENABLED = True
     WTF_CSRF_TIME_LIMIT = 3600
-    SECURE_HEADERS = {
-        'default-src': "'self'",
-        'img-src': "'self' data: https:",
-        'script-src': "'self' 'unsafe-inline'",
-        'style-src': "'self' 'unsafe-inline'"
-    }
     
     # Recipe settings
     RECIPES_PER_PAGE = 12
@@ -115,13 +102,6 @@ class Config:
     LOG_FILE = str(Path(basedir, 'instance', 'recipe_master.log'))
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     LOG_LEVEL = 'INFO'
-    
-    # Sentry settings
-    SENTRY_DSN = None  # Add your Sentry DSN here for production
-    
-    # Rate limiting
-    DEFAULT_RATE_LIMITS = ["200 per day", "50 per hour"]
-    RATELIMIT_STORAGE_URL = "memory://"
 
     # Database connection settings
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -144,7 +124,7 @@ class Config:
         os.makedirs(os.path.join(basedir, 'static', 'images'), exist_ok=True)
         print(f"Database path: {os.path.abspath(app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', ''))}")
 
-class DevelopmentConfig(Config):
+class DevelopmentConfig(BaseConfig):
     DEBUG = True
     TESTING = False
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + str(Path(basedir, 'instance', 'recipes.db'))
@@ -158,7 +138,7 @@ class DevelopmentConfig(Config):
     EXPLAIN_TEMPLATE_LOADING = True
     SEND_FILE_MAX_AGE_DEFAULT = 0
 
-class ProductionConfig(Config):
+class ProductionConfig(BaseConfig):
     DEBUG = False
     TESTING = False
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
@@ -214,7 +194,7 @@ class ProductionConfig(Config):
         'Content-Security-Policy': "default-src 'self'"
     }
 
-class TestingConfig(Config):
+class TestingConfig(BaseConfig):
     DEBUG = False
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
@@ -235,8 +215,7 @@ config = {
 
 # Use this in wsgi.py
 def get_config():
-    config_name = os.environ.get('FLASK_ENV', 'development')
-    return config[config_name]
+    return config[os.environ.get('FLASK_ENV', 'default')]
 
 # This is what we import in main.py
 AppConfig = DevelopmentConfig 

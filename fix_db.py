@@ -2,6 +2,15 @@ import os
 from wsgiO import app, db
 from models.models import User, Recipe, Ingredient, Comment, Category, Favorite
 from models.models import ShoppingList, ShoppingListItem, CollaborativeList, UserActivity
+from flask import Flask
+from extensions import db
+
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///recipes.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db.init_app(app)
+    return app
 
 def check_and_fix_database():
     # First ensure instance directory exists
@@ -101,6 +110,15 @@ def check_and_fix_database():
             db.session.rollback()
             return False
 
+def fix_database():
+    with app.app_context():
+        db.session.execute('ALTER TABLE shopping_list_items DROP COLUMN ingredient_id')
+        db.session.execute('ALTER TABLE recipe_ingredients DROP COLUMN ingredient_id')
+        db.session.commit()
+        print("Database structure fixed!")
+
+app = create_app()
+
 if __name__ == '__main__':
     # Ensure the database file exists
     db_path = os.path.join('instance', 'recipes.db')
@@ -111,4 +129,5 @@ if __name__ == '__main__':
             db.create_all()
             print("Database initialized.")
     
-    check_and_fix_database() 
+    check_and_fix_database()
+    fix_database() 

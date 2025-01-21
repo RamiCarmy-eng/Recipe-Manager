@@ -1,3 +1,3 @@
-FLASK_APP=main.py
+FLASK_APP=wsgi.py
 FLASK_ENV=development
-PYTHONPATH=C:\Users\carmi\pythonprograms\Recipe-Master 
+PYTHONPATH=. 

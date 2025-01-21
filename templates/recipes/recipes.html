@@ -31,8 +31,10 @@
         {% for recipe in recipes %}
         <div class="col-md-4 mb-4">
             <div class="card">
-                {% if recipe.image %}
-                <img src="{{ url_for('static', filename='uploads/' + recipe.image) }}" class="card-img-top" alt="{{ recipe.name }}">
+                {% if recipe.image_filename %}
+                <img src="{{ url_for('static', filename='images/' + recipe.image_filename) }}" class="card-img-top" alt="{{ recipe.name }}">
+                {% else %}
+                <div class="recipe-no-image">No Image</div>
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ recipe.name }}</h5>

@@ -14,6 +14,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.urls import url_parse
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -52,40 +53,36 @@ def register():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    # Redirect if user is already logged in
     if current_user.is_authenticated:
-        return redirect(url_for('main.recipes'))
-
+        return redirect(url_for('main.index'))
+    
     form = LoginForm()
-
     if form.validate_on_submit():
+        print(f"Trying to login with username: {form.username.data}")
+        
+        # Search by username and check password
         user = User.query.filter_by(username=form.username.data).first()
-        if user and check_password_hash(user.password, form.password.data):
-            # Login the user first
-            login_user(user, remember=form.remember_me.data)
+        if user is None:
+            flash('Invalid username or password')
+            return redirect(url_for('auth.login'))
+            
+        if not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('auth.login'))
 
-            # Log the login activity
-            activity = UserActivity(
-                user_id=user.id,
-                action='login',
-                ip_address=request.remote_addr,
-                timestamp=datetime.utcnow()
-            )
-            db.session.add(activity)
-
-            # Update last login
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-
-            # Get next page from request args (only get it once)
-            next_page = request.args.get('next')
-            if next_page:
-                return redirect(next_page)
-            return redirect(url_for('main.recipes'))
-
-        flash('Invalid username or password', 'error')
-
-    return render_template('auth/login.html', form=form, title='Login')
+        if not user.check_password(form.password.data):
+            print("Password incorrect")
+            flash('Invalid username or password')
+            return redirect(url_for('auth.login'))
+        
+        # Login successful
+        login_user(user)
+        next_page = request.args.get('next')
+        if not next_page or url_parse(next_page).netloc != '':
+            next_page = url_for('main.index')  # This redirects to the main page
+        return redirect(next_page)
+    
+    return render_template('auth/login.html', title='Sign In', form=form)
 
 @auth_bp.route('/logout')
 @login_required
@@ -165,13 +162,8 @@ def create_admin():
 
 
 class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[
-        DataRequired(message="Username is required"),
-        Length(min=4, max=80, message="Username must be between 4 and 80 characters")
-    ])
-    password = PasswordField('Password', validators=[
-        DataRequired(message="Password is required")
-    ])
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Login')
 

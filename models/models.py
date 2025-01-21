@@ -2,6 +2,8 @@ from datetime import datetime
 from flask_login import UserMixin
 from extensions import db
 from sqlalchemy.ext.hybrid import hybrid_property
+from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class Comment(db.Model):
     __tablename__ = 'comments'
@@ -39,6 +41,16 @@ class User(UserMixin, db.Model):
     activities = db.relationship('UserActivity', backref='user', lazy=True)
 
     preference = db.relationship('UserPreference', backref='qwner', uselist=False)
+
+
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
+
+    def __repr__(self):
+        return f'<User {self.username}>'
 
     def get_id(self):
         return str(self.id)
@@ -198,10 +210,10 @@ class ShoppingListItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shopping_list_id = db.Column(db.Integer, db.ForeignKey('shopping_lists.id'), nullable=False)
     ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredients.id'), nullable=False)
+    ingredient_name = db.Column(db.String(100), nullable=False)  # Add this line
     amount = db.Column(db.Float)
     unit = db.Column(db.String(20))
-    is_checked = db.Column(db.Boolean, default=False)
-
+    checked = db.Column(db.Boolean, default=False)
 
 class ShoppingListTemplate(db.Model):
     __tablename__ = 'shopping_list_templates'

@@ -1,49 +1,23 @@
-# Recipe-Master Project TODO List
-
-## 1. Fix Login/Authentication Issues
-- [ ] Fix "Logged in successfully!" message appearing on empty form
-- [ ] Ensure proper redirection after login
-- [ ] Add proper password hashing in User model
-- [ ] Test session management
-
-## 2. Fix Database Relationships
-- [ ] Complete User-Recipe relationship fixes
-- [ ] Test shopping list functionality
-- [ ] Verify category relationships
-- [ ] Fix foreign key constraints
-
-## 3. Fix Template Issues
-- [ ] Add missing images support
-- [ ] Fix recipe viewing template
-- [ ] Implement proper navigation tabs
-- [ ] Add proper error messages display
-- [ ] Fix nl2br filter implementation
-
-## 4. Add Core Features
-- [ ] Implement recipe search functionality
-- [ ] Add recipe categories management
-- [ ] Complete shopping list creation
-- [ ] Add ingredient management
-- [ ] Add recipe rating system
-
-## 5. Testing
-- [ ] Test user registration
-- [ ] Test recipe creation/editing
-- [ ] Test shopping list functionality
-- [ ] Verify all database relationships
-- [ ] Test image upload/display
-
-## 6. UI Improvements
-- [ ] Add proper form validation messages
-- [ ] Improve recipe display layout
-- [ ] Add loading indicators
-- [ ] Implement responsive design fixes
-- [ ] Add user feedback notifications
-
-## Notes
-- Priority: Login fixes and database relationships
-- Remember to test each feature after implementation
-- Document any API changes
-- Keep track of completed items
-
-Last Updated: 2024-01-24
+TODO List for Tomorrow:
+Shopping List Functionality:
+Fix servings input on recipe selection
+Add "Calculate" button functionality
+Add "Delete Selected" button functionality
+Implement "Export to Excel" feature
+Admin Features:
+Complete "Manage Recipes" tab
+Complete "Manage Users" tab
+Add admin dashboard
+Recipe Features:
+Fix recipe images display
+Add category filtering
+Fix recipe view page (nl2br issue)
+Categories:
+Fix categories tab
+Implement recipes_by_category functionality
+Add proper category navigation
+Optional Cleanup:
+Fix nested repository issue (not urgent)
+Clean up database structure
+Add missing columns if needed
+Which task would you like to tackle first tomorrow?

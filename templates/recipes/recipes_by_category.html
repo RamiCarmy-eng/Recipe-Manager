@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="category-recipes-container">
+    <h1>{{ category.name }} Recipes</h1>
+    
+    <div class="recipes-grid">
+        {% for recipe in recipes %}
+        <div class="recipe-card">
+            {% if recipe.image_filename %}
+                <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) }}" 
+                     alt="{{ recipe.title }}" 
+                     class="recipe-thumbnail">
+            {% else %}
+                <div class="recipe-no-image">No Image</div>
+            {% endif %}
+            
+            <div class="recipe-info">
+                <h3>{{ recipe.title }}</h3>
+                <div class="recipe-meta">
+                    <span>Prep: {{ recipe.prep_time }}min</span>
+                    <span>Cook: {{ recipe.cook_time }}min</span>
+                    <span class="difficulty-{{ recipe.difficulty }}">{{ recipe.difficulty|title }}</span>
+                </div>
+                <a href="{{ url_for('recipe.view_recipe', recipe_id=recipe.id) }}" 
+                   class="btn btn-primary">View Recipe</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-recipes">
+            <p>No recipes found in this category.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

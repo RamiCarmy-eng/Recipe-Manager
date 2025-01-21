@@ -1,114 +1,47 @@
 from flask import Flask
-# Standard library imports
-import os
-import logging
-from logging.handlers import RotatingFileHandler
-from datetime import datetime
-from pathlib import Path
-
-# Security extensions
-from flask_compress import Compress
-from flask import Flask, current_app
-from flask_login import current_user
 from flask_compress import Compress
 from flask_talisman import Talisman
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+from datetime import datetime
 
-# Get base directory
-basedir = Path(__file__).parent
-
-# Core extensions
-from extensions import (
-    db,
-    login_manager,
-    mail,
-    migrate,
-    cache,
-    scheduler
-)
-# Local imports - models
+from config import get_config
+from extensions import db, login_manager, mail, migrate, cache, scheduler
 from models import User
-
-# Local imports - utils
-from errors import register_error_handlers
-from filters import register_template_filters
-from context_processors import register_context_processors
-
-# Local imports - routes
-from routes.auth import auth_bp
-from routes.main import main_bp
-from routes.recipe import recipe_bp
-from routes.api import api_bp
-from routes.admin import admin_bp
-from routes.shopping import shopping_bp
-from routes.user import user_bp
-from routes.category import category_bp
-from routes.favorite import favorite_bp
-from routes.comment import comment_bp
-from routes.search import search_bp
-from routes.export import export_bp
-from routes.notification import notification_bp
-from routes.collaboration import collab_bp
-
-
-def register_commands(app):
-    @app.cli.command('init-db')
-    def init_db():
-        """Initialize the database."""
-        db.create_all()
-        click.echo('Initialized the database.')
-
 
 def create_app():
     app = Flask(__name__)
-
-    # Set secret key directly first
-    app.secret_key = 'dev'
-
-    # Set database URI directly
-    basedir = Path(__file__).parent
-    # Ensure instance folder exists
-    instance_path = Path(basedir, 'instance')
-    db_path = Path(instance_path, 'recipes.db')
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    # Load config directly from Config class
-    from config import Config
-    app.config.from_object(Config)
-
-    # Ensure instance folder exists
-    if not instance_path.exists():
-        instance_path.mkdir(parents=True)
-
+    
+    # Load config based on environment
+    config = get_config()
+    app.config.from_object(config)
+    
+    # Initialize Sentry in production
+    if not app.debug and not app.testing:
+        sentry_sdk.init(
+            dsn=app.config.get('SENTRY_DSN'),
+            integrations=[FlaskIntegration()],
+            traces_sample_rate=1.0,
+            environment=os.environ.get('FLASK_ENV', 'production')
+        )
+    
     # Initialize core extensions
     login_manager.init_app(app)
     db.init_app(app)
     migrate.init_app(app, db)
-
-    # Initialize mail with explicit debug setting
-    app.config['MAIL_DEBUG'] = int(app.config.get('MAIL_DEBUG', 0))
     mail.init_app(app)
-
     cache.init_app(app)
-    scheduler.init_app(app)
+    scheduler.init_app(app)  # For background tasks
     
     # Initialize security extensions
-    Compress(app)
+    Compress(app)  # Compress responses
     if not app.debug and not app.testing:
-        Talisman(app, content_security_policy=app.config.get('SECURE_HEADERS', {}))
-        
-        # Initialize Sentry
-        if app.config.get('SENTRY_DSN'):
-            sentry_sdk.init(
-                dsn=app.config['SENTRY_DSN'],
-                integrations=[FlaskIntegration()],
-                traces_sample_rate=1.0,
-                environment=os.environ.get('FLASK_ENV', 'production')
-            )
+        Talisman(app, content_security_policy=app.config['SECURE_HEADERS'])
     
     # Initialize rate limiter
     limiter = Limiter(
@@ -119,12 +52,11 @@ def create_app():
     
     # Set up logging
     if not app.debug and not app.testing:
-        logs_dir = Path(app.root_path) / 'logs'
-        logs_dir.mkdir(exist_ok=True)
-        
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
         file_handler = RotatingFileHandler(
-            str(logs_dir / 'recipe_master.log'),
-            maxBytes=10240,
+            'logs/recipe_master.log', 
+            maxBytes=10240, 
             backupCount=10
         )
         file_handler.setFormatter(logging.Formatter(
@@ -137,6 +69,21 @@ def create_app():
         app.logger.info('Recipe Master startup')
     
     # Register all blueprints
+    from routes.auth import auth_bp
+    from routes.main import main_bp
+    from routes.recipe import recipe_bp
+    from routes.api import api_bp
+    from routes.admin import admin_bp
+    from routes.shopping import shopping_bp
+    from routes.user import user_bp
+    from routes.category import category_bp
+    from routes.favorite import favorite_bp
+    from routes.comment import comment_bp
+    from routes.search import search_bp
+    from routes.export import export_bp
+    from routes.notification import notification_bp
+    from routes.collaboration import collab_bp
+    
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(main_bp)
     app.register_blueprint(recipe_bp, url_prefix='/recipe')
@@ -152,10 +99,20 @@ def create_app():
     app.register_blueprint(notification_bp, url_prefix='/notification')
     app.register_blueprint(collab_bp, url_prefix='/collab')
     
-    # Register error handlers, commands, filters, and context processors
+    # Register error handlers
+    from errors import register_error_handlers
     register_error_handlers(app)
+    
+    # Register CLI commands
+    from commands import register_commands
     register_commands(app)
+    
+    # Register template filters
+    from filters import register_template_filters
     register_template_filters(app)
+    
+    # Register context processors
+    from context_processors import register_context_processors
     register_context_processors(app)
     
     # Register Jinja2 extensions

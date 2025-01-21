@@ -1,22 +1,12 @@
-import sqlite3
+from wsgi import app
+from models import User
+from extensions import db
 
-def check_users():
-    conn = sqlite3.connect('recipes_images.db')
-    conn.row_factory = sqlite3.Row
-    
-    try:
-        cursor = conn.execute('SELECT * FROM users')
-        users = cursor.fetchall()
-        
-        print("\nUsers in database:")
-        for user in users:
-            print(f"Username: {user['username']}")
-            print(f"Password: {user['password']}")
-            print(f"Role: {user['role']}")
-            print("-" * 20)
-            
-    finally:
-        conn.close()
-
-if __name__ == '__main__':
-    check_users()
+with app.app_context():
+    users = User.query.all()
+    print("\nAll users in database:")
+    for user in users:
+        print(f"Username: {user.username}")
+        print(f"Email: {user.email}")
+        print(f"Password hash: {user.password}")
+        print("-" * 50)

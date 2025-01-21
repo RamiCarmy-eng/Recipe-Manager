@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="shopping-container">
+    <h1>Create Shopping List</h1>
+    
+    <!-- Recipe Search and Selection -->
+    <div class="recipe-search-section">
+        <div class="form-group">
+            <input type="text" id="recipe-search" class="form-control" placeholder="Search recipes...">
+            <div id="recipe-search-results" class="search-results"></div>
+        </div>
+        
+        <!-- Global Servings Control -->
+        <div class="global-servings">
+            <label for="global-servings">Global Servings Multiplier:</label>
+            <input type="number" id="global-servings" class="form-control" value="1" min="0.1" step="0.1">
+            <button onclick="applyGlobalServings()" class="btn btn-secondary">Apply to All</button>
+        </div>
+    </div>
+
+    <!-- Selected Recipes List -->
+    <div id="selected-recipes" class="selected-recipes">
+        <h3>Selected Recipes</h3>
+        <div id="recipe-list"></div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <button onclick="calculateList()" class="btn btn-primary">Calculate List</button>
+        <button onclick="clearList()" class="btn btn-danger">Delete All</button>
+        <button onclick="exportToExcel()" class="btn btn-success">Export to Excel</button>
+    </div>
+
+    <!-- Shopping List Result -->
+    <div id="shopping-list-result" class="shopping-list-result">
+        <h3>Shopping List</h3>
+        <div id="ingredients-list"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedRecipes = [];
+
+// Recipe search functionality
+document.getElementById('recipe-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value;
+    if (searchTerm.length < 2) {
+        document.getElementById('recipe-search-results').innerHTML = '';
+        return;
+    }
+    
+    fetch(`/recipe/search?term=${searchTerm}`)
+        .then(response => response.json())
+        .then(recipes => {
+            const resultsDiv = document.getElementById('recipe-search-results');
+            resultsDiv.innerHTML = recipes.map(recipe => `
+                <div class="search-result" onclick="addRecipe(${recipe.id}, '${recipe.title}')">
+                    ${recipe.title}
+                </div>
+            `).join('');
+        });
+});
+
+function addRecipe(id, title) {
+    if (!selectedRecipes.find(r => r.id === id)) {
+        selectedRecipes.push({
+            id: id,
+            title: title,
+            servings: 1
+        });
+        updateRecipeList();
+    }
+    document.getElementById('recipe-search').value = '';
+    document.getElementById('recipe-search-results').innerHTML = '';
+}
+
+function updateRecipeList() {
+    const list = document.getElementById('recipe-list');
+    list.innerHTML = selectedRecipes.map(recipe => `
+        <div class="recipe-item">
+            <span>${recipe.title}</span>
+            <input type="number" value="${recipe.servings}" min="0.1" step="0.1" 
+                   onchange="updateServings(${recipe.id}, this.value)">
+            <button onclick="removeRecipe(${recipe.id})" class="btn btn-sm btn-danger">Remove</button>
+        </div>
+    `).join('');
+}
+
+function updateServings(recipeId, servings) {
+    const recipe = selectedRecipes.find(r => r.id === recipeId);
+    if (recipe) {
+        recipe.servings = parseFloat(servings);
+    }
+}
+
+function removeRecipe(recipeId) {
+    selectedRecipes = selectedRecipes.filter(r => r.id !== recipeId);
+    updateRecipeList();
+}
+
+function applyGlobalServings() {
+    const multiplier = parseFloat(document.getElementById('global-servings').value);
+    selectedRecipes.forEach(recipe => {
+        recipe.servings = multiplier;
+    });
+    updateRecipeList();
+}
+
+function calculateList() {
+    if (selectedRecipes.length === 0) {
+        alert('Please select at least one recipe');
+        return;
+    }
+    
+    fetch('/shopping/calculate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            recipes: selectedRecipes
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        document.getElementById('ingredients-list').innerHTML = result.ingredients.map(ing => `
+            <div class="ingredient-item">
+                <span>${ing.amount} ${ing.unit} ${ing.name}</span>
+            </div>
+        `).join('');
+    });
+}
+
+function clearList() {
+    selectedRecipes = [];
+    updateRecipeList();
+    document.getElementById('ingredients-list').innerHTML = '';
+}
+
+function exportToExcel() {
+    if (selectedRecipes.length === 0) {
+        alert('Please calculate shopping list first');
+        return;
+    }
+    
+    fetch('/shopping/export', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            recipes: selectedRecipes
+        })
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'shopping_list.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    });
+}
+</script>
+{% endblock %} 
